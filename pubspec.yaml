@@ -1,0 +1,39 @@
+name: ngirit
+version: 1.0.0+1
+publish_to: none
+description: A new Flutter project.
+environment: 
+  sdk: '>=3.4.1 <4.0.0'
+
+dependencies: 
+  cupertino_icons: ^1.0.6
+  get: 4.6.6
+  firebase_core: ^2.13.0
+  firebase_auth: ^4.6.0
+  cloud_firestore: ^4.5.0
+  firebase_storage: ^11.6.9
+  font_awesome_flutter:
+  flutter: 
+    sdk: flutter
+
+dev_dependencies: 
+  flutter_lints: ^3.0.0
+  flutter_test: 
+    sdk: flutter
+
+flutter: 
+  uses-material-design: true
+  assets:
+     - assets/images/logo.png
+     - assets/images/ngirit.png
+     - assets/images/login.png
+     - assets/icons/bca.webp
+     - assets/icons/bni.jpg
+     - assets/icons/bri.png
+     - assets/icons/mandiri.svg
+     - assets/icons/paypal.webp
+  fonts:
+    - family: Lilita One
+      fonts:
+        - asset: assets/fonts/LilitaOne-Regular.ttf
+        # - asset: assets/fonts/OpenSans-Italic-VariableFont_wdthwght.ttf

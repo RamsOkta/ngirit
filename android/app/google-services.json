@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "316996872372",
+    "project_id": "ngirit-8de40",
+    "storage_bucket": "ngirit-8de40.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316996872372:android:059c139b95ee650fbfcfe1",
+        "android_client_info": {
+          "package_name": "com.example.ngirit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7HCa6yWpFuQOiHrRaWAi8PYUdaJWUXf0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
