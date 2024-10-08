@@ -12,6 +12,8 @@ dependencies:
   firebase_auth: ^4.6.0
   cloud_firestore: ^4.5.0
   firebase_storage: ^11.6.9
+  fl_chart: 
+  intl : 
   font_awesome_flutter:
   flutter: 
     sdk: flutter
@@ -24,6 +26,7 @@ dev_dependencies:
 flutter: 
   uses-material-design: true
   assets:
+     - assets/icons/
      - assets/images/logo.png
      - assets/images/ngirit.png
      - assets/images/login.png
@@ -32,6 +35,14 @@ flutter:
      - assets/icons/bri.png
      - assets/icons/mandiri.svg
      - assets/icons/paypal.webp
+     - assets/images/onboarding_image1.png
+     - assets/images/onboarding_image2.png
+     - assets/images/onboarding_image.png
+     - assets/images/splash_logo.png
+     - assets/icons/car.png
+     - assets/icons/cinema.png
+     - assets/icons/shop.png
+     - assets/icons/food.png
   fonts:
     - family: Lilita One
       fonts:

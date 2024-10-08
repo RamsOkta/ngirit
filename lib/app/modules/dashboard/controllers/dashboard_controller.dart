@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,7 +11,14 @@ class DashboardController extends GetxController {
   var username = ''.obs;
   var saldo = 0.obs; // Default saldo 0
   var accounts = <Map<String, dynamic>>[].obs;
-  var creditCards = <Map<String, dynamic>>[].obs; // New list for credit cards
+  var creditCards = <Map<String, dynamic>>[].obs;
+  var selectedTab = 0.obs; // New list for credit cards
+  var selectedAkun = ''.obs;
+  var selectedKategori = ''.obs;
+  var selectedDate = ''.obs;
+  TextEditingController nominalController = TextEditingController();
+
+  TextEditingController deskripsiController = TextEditingController();
 
   @override
   void onInit() {
@@ -106,6 +114,73 @@ class DashboardController extends GetxController {
     } catch (e) {
       Get.snackbar('Error', 'Failed to load credit cards');
     }
+  }
+
+  // void saveDataToFirebase(double nominal, int selectedTab) {
+  //   // Tentukan koleksi berdasarkan tab yang dipilih
+  //   String collection;
+  //   switch (selectedTab) {
+  //     case 0:
+  //       collection = 'pengeluaran';
+  //       break;
+  //     case 1:
+  //       collection = 'pendapatan';
+  //       break;
+  //     case 2:
+  //       collection = 'transfer';
+  //       break;
+  //     default:
+  //       collection = 'pengeluaran'; // Default ke pengeluaran
+  //   }
+
+  //   // Simpan data ke Firebase
+  //   FirebaseFirestore.instance.collection(collection).add({
+  //     'nominal': nominal,
+  //     'timestamp': FieldValue.serverTimestamp(),
+  //   }).then((value) {
+  //     Get.snackbar('Success', 'Data berhasil disimpan ke $collection');
+  //   }).catchError((error) {
+  //     Get.snackbar('Error', 'Gagal menyimpan data');
+  //   });
+  // }
+
+  // Function to save form data to Firestore
+  Future<void> saveFormData(String nominal) async {
+    final controller = Get.find<DashboardController>();
+
+    if (controller.selectedKategori.isNotEmpty &&
+        controller.selectedAkun.isNotEmpty &&
+        controller.selectedDate.isNotEmpty) {
+      try {
+        User? user = FirebaseAuth.instance.currentUser;
+
+        if (user != null) {
+          await FirebaseFirestore.instance.collection('pengeluaran').add({
+            'user_id': user.uid,
+            'nominal': nominal,
+            'deskripsi': deskripsiController.text,
+            'kategori': controller.selectedKategori.value,
+            'akun': controller.selectedAkun.value,
+            'tanggal': controller.selectedDate.value,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+          Get.snackbar('Success', 'Data pengeluaran berhasil disimpan');
+        }
+      } catch (e) {
+        Get.snackbar('Error', 'Gagal menyimpan data pengeluaran');
+      }
+    } else {
+      Get.snackbar('Error', 'Pastikan semua field diisi');
+    }
+  }
+
+  // Function to reset the form fields
+  void resetForm() {
+    nominalController.clear();
+    deskripsiController.clear();
+    selectedAkun.value = '';
+    selectedKategori.value = '';
+    selectedDate.value = '';
   }
 
   void toggleSaldoVisibility() {
