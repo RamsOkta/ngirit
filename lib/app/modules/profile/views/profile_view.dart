@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart'; // Add this import
 import '../controllers/profile_controller.dart';
 
 class ProfileView extends StatelessWidget {
@@ -62,8 +63,60 @@ class ProfileView extends StatelessWidget {
                         20), // Spasi tambahan agar tombol tidak terlalu dekat
                 ElevatedButton(
                   onPressed: () {
-                    // Arahkan ke halaman edit profile
-                    Get.toNamed('/dashboard');
+                    // Menampilkan popup untuk mengedit profil
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text('Edit Profil'),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextField(
+                                controller: TextEditingController(
+                                    text: controller.username.value),
+                                decoration: InputDecoration(
+                                  labelText: 'Username',
+                                ),
+                                onChanged: (value) {
+                                  controller.username.value = value;
+                                },
+                              ),
+                              SizedBox(height: 10),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  // Aksi untuk mengubah foto profil
+                                  // Misalnya membuka galeri untuk memilih gambar
+                                  final pickedFile = await ImagePicker()
+                                      .pickImage(source: ImageSource.gallery);
+                                  if (pickedFile != null) {
+                                    controller.profilePictureUrl.value =
+                                        pickedFile.path;
+                                  }
+                                },
+                                child: Text('Ubah Foto Profil'),
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Get.back();
+                              },
+                              child: Text('Batal'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Simpan perubahan profil
+                                // Misalnya, panggil API untuk menyimpan data
+                                Get.back();
+                              },
+                              child: Text('Simpan'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(

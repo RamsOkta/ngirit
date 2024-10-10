@@ -9,7 +9,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(); // Inisialisasi Firebase di sini
   runApp(
-    GetMaterialApp(
+    GetMaterialApp( 
       title: "Application",
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,

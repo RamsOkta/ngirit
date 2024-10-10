@@ -1,7 +1,13 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get/get.dart'; // Untuk navigasi
 import 'package:ngirit/onboarding_screen/onboarding_screen.dart';
+
+import '../app/modules/dashboard/views/dashboard_view.dart';
+
+// Halaman dashboard
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -13,6 +19,7 @@ class _SplashScreenState extends State<SplashScreen>
   double _opacity = 0.0; // Initial opacity for animation
   late AnimationController _controller;
   double spinnerSize = 50; // Spinner size can be adjusted here
+  final FirebaseAuth _auth = FirebaseAuth.instance; // Tambahkan FirebaseAuth
 
   @override
   void initState() {
@@ -31,12 +38,23 @@ class _SplashScreenState extends State<SplashScreen>
       });
     });
 
-    // Navigate to the next screen after 3 seconds
+    // Cek status login setelah 3 detik
     Timer(Duration(seconds: 3), () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => OnboardingScreen()),
-      );
+      _checkLoginStatus();
     });
+  }
+
+  // Fungsi untuk cek status login
+  void _checkLoginStatus() {
+    User? currentUser = _auth.currentUser;
+
+    if (currentUser != null) {
+      // Jika pengguna sudah login, arahkan ke dashboard
+      Get.offAll(() => DashboardView());
+    } else {
+      // Jika belum login, arahkan ke onboarding
+      Get.offAll(() => OnboardingScreen());
+    }
   }
 
   @override

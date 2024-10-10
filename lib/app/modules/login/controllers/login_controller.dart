@@ -8,7 +8,23 @@ class LoginController extends GetxController {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  var isLoading = false.obs; // Observasi untuk menampilkan loader ketika login
+  var isLoading = false.obs;
+
+  // Saat controller diinisialisasi, cek apakah user sudah login atau belum
+  @override
+  void onInit() {
+    super.onInit();
+    _checkUserLoginStatus();
+  }
+
+  // Fungsi untuk cek status login
+  void _checkUserLoginStatus() async {
+    User? currentUser = _auth.currentUser;
+    if (currentUser != null) {
+      // Jika pengguna sudah login, langsung ke dashboard
+      Get.offAllNamed('/dashboard');
+    }
+  }
 
   // Fungsi untuk login
   Future<void> login() async {
@@ -26,7 +42,7 @@ class LoginController extends GetxController {
         email: email,
         password: password,
       );
-      // Jika login berhasil, arahkan ke halaman dashboard (misalnya)
+      // Jika login berhasil, arahkan ke halaman dashboard
       Get.offAllNamed('/dashboard');
     } on FirebaseAuthException catch (e) {
       Get.snackbar('Login Failed', e.message ?? 'Terjadi kesalahan');
@@ -35,7 +51,12 @@ class LoginController extends GetxController {
     }
   }
 
-  // Membersihkan controller saat tidak lagi digunakan
+  // Fungsi untuk logout
+  Future<void> logout() async {
+    await _auth.signOut();
+    Get.offAllNamed('/login'); // Kembali ke halaman login setelah logout
+  }
+
   @override
   void onClose() {
     emailController.dispose();

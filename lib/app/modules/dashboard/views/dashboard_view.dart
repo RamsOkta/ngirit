@@ -6,7 +6,6 @@ import '../controllers/dashboard_controller.dart';
 class DashboardView extends StatelessWidget {
   final DashboardController controller = Get.put(DashboardController());
   final TextEditingController nominalController = TextEditingController();
-  final TextEditingController deskripsiController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +35,8 @@ class DashboardView extends StatelessWidget {
                       IconButton(
                         icon: Icon(Icons.person, color: Colors.white),
                         onPressed: () {
-                          // Aksi tombol profile
+                          Get.toNamed(
+                              '/profile'); // Navigasi ke halaman profile
                         },
                       ),
                       Expanded(
@@ -55,9 +55,10 @@ class DashboardView extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.notifications, color: Colors.white),
+                        icon: Icon(Icons.logout, color: Colors.white),
                         onPressed: () {
-                          // Aksi tombol notifikasi
+                          controller
+                              .logout(); // Panggil fungsi logout dari controller
                         },
                       ),
                     ],
@@ -547,7 +548,7 @@ class DashboardView extends StatelessWidget {
                             case 0:
                               return _buildPengeluaranForm(context);
                             case 1:
-                              return _buildPendapatanForm();
+                              return _buildPendapatanForm(context);
                             case 2:
                               return _buildTransferForm();
                             default:
@@ -647,8 +648,10 @@ class DashboardView extends StatelessWidget {
     return Column(
       crossAxisAlignment:
           CrossAxisAlignment.start, // Supaya label di atas text field
+
       children: [
         // TextField untuk Deskripsi
+
         Text(
           'Deskripsi', // Label di atas input field
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -658,26 +661,18 @@ class DashboardView extends StatelessWidget {
           child: Column(
             children: [
               TextField(
-                controller: deskripsiController, // Menggunakan controller
+                controller: controller
+                    .deskripsiController, // Gunakan controller biasa tanpa Obx
+                onChanged: (value) {
+                  controller.deskripsi.value =
+                      value; // Ini adalah variabel observable, jadi perlu diperbarui di sini
+                },
                 decoration: InputDecoration(
-                  hintText: 'Masukkan Deskripsi', // Placeholder
+                  labelText: 'Masukkan Deskripsi', // Placeholder
                   prefixIcon: Icon(Icons.edit), // Ikon di dalam field
-                  border: OutlineInputBorder(
-                    // Ganti menjadi OutlineInputBorder untuk border yang lebih baik
-                    borderRadius: BorderRadius.circular(5.0),
-                    borderSide: BorderSide(color: Colors.grey, width: 1.0),
-                  ),
                   contentPadding:
                       EdgeInsets.symmetric(vertical: 10), // Padding agar rapi
                 ),
-                onChanged: (value) {
-                  print(
-                      'Deskripsi yang dimasukkan: $value'); // Debugging untuk melihat input
-                },
-              ),
-              Divider(
-                thickness: 1, // Tebal garis bawah
-                color: Colors.grey, // Warna garis bawah
               ),
             ],
           ),
@@ -739,9 +734,6 @@ class DashboardView extends StatelessWidget {
                         hintText: controller.selectedAkun.value.isNotEmpty
                             ? controller.selectedAkun.value
                             : 'Pilih Akun', // Placeholder
-                        border: InputBorder.none, // Hilangkan outline border
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 10), // Padding agar rapi
                       ),
                     ),
                     Divider(
@@ -808,13 +800,155 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildPendapatanForm() {
+  Widget _buildPendapatanForm(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildTextField('Deskripsi', Icons.edit),
-        _buildTextField('Kategori', Icons.list),
-        _buildTextField('Dibayar dengan', Icons.wallet_giftcard),
-        _buildTextField('Tanggal', Icons.calendar_today),
+        // TextField untuk Deskripsi Pendapatan
+        Text(
+          'Deskripsi',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: TextField(
+              controller: controller
+                  .deskripsiController, // Gunakan controller yang sudah didefinisikan
+              onChanged: (value) {
+                controller.deskripsi.value =
+                    value; // Simpan input deskripsi ke dalam controller
+              },
+              decoration: InputDecoration(
+                labelText: 'Masukkan Deskripsi', // Placeholder
+                prefixIcon: Icon(Icons.edit), // Ikon di dalam field
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 10), // Padding agar rapi
+              ),
+            )),
+
+        // TextField untuk Kategori Pendapatan
+        Text(
+          'Kategori',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        GestureDetector(
+          onTap: () {
+            _showKategoriPendapatanBottomSheet(context);
+          },
+          child: AbsorbPointer(
+            child: Obx(() {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: TextEditingController(
+                        text: controller.selectedKategori.value,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: controller.selectedKategori.value.isNotEmpty
+                            ? controller.selectedKategori.value
+                            : 'Pilih Kategori',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                    Divider(
+                      thickness: 1,
+                      color: Colors.grey,
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ),
+
+        // TextField untuk Masuk Saldo Ke
+        Text(
+          'Masuk Saldo Ke',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        GestureDetector(
+          onTap: () {
+            _showAkunBottomSheet(context);
+          },
+          child: AbsorbPointer(
+            child: Obx(() {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: TextEditingController(
+                        text: controller.selectedAkun.value,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: controller.selectedAkun.value.isNotEmpty
+                            ? controller.selectedAkun.value
+                            : 'Pilih Akun',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                    Divider(
+                      thickness: 1,
+                      color: Colors.grey,
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ),
+
+        // TextField untuk Tanggal Pendapatan
+        Text(
+          'Tanggal',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        GestureDetector(
+          onTap: () async {
+            DateTime? selectedDate = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2101),
+            );
+            if (selectedDate != null) {
+              controller.selectedDate.value =
+                  "${selectedDate.day}-${selectedDate.month}-${selectedDate.year}";
+            }
+          },
+          child: AbsorbPointer(
+            child: Obx(() {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: TextEditingController(
+                        text: controller.selectedDate.value,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: controller.selectedDate.value.isNotEmpty
+                            ? controller.selectedDate.value
+                            : 'Pilih Tanggal',
+                        prefixIcon: Icon(Icons.calendar_today),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                    Divider(
+                      thickness: 1,
+                      color: Colors.grey,
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ),
       ],
     );
   }
@@ -948,7 +1082,7 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-  // Fungsi buttomsheet kategori
+  // Fungsi buttomsheet kategori pengeluaran
 
   void _showKategoriBottomSheet(BuildContext context) {
     final List<Map<String, dynamic>> kategoriList = [
@@ -999,6 +1133,70 @@ class DashboardView extends StatelessWidget {
                         SizedBox(height: 8),
                         Text(
                           kategori['labels'], // Menggunakan 'labels' yang benar
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Fungsi buttomsheet kategori penghasilan
+  void _showKategoriPendapatanBottomSheet(BuildContext context) {
+    final List<Map<String, dynamic>> kategoriPendapatanList = [
+      {'label': 'Gaji', 'icon': 'assets/icons/salary.png'},
+      {'label': 'Investasi', 'icon': 'assets/icons/investment.png'},
+      {'label': 'Hadiah', 'icon': 'assets/icons/gift.png'},
+      {'label': 'Bonus', 'icon': 'assets/icons/bonus.png'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.all(16.0),
+          height: 250,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Pilih Kategori Pendapatan',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: kategoriPendapatanList.map((kategori) {
+                  return GestureDetector(
+                    onTap: () {
+                      // Simpan kategori yang dipilih di controller
+                      controller.selectedKategori.value = kategori['label'];
+                      Navigator.pop(context); // Tutup bottom sheet
+                    },
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 30, // Ukuran icon
+                          backgroundColor: Colors.grey[200],
+                          child: Image.asset(
+                            kategori['icon'], // Menampilkan gambar dari assets
+                            width: 28, // Ukuran gambar
+                            height: 28,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          kategori['label'], // Menggunakan 'labels' yang benar
                           style: TextStyle(fontSize: 14),
                         ),
                       ],

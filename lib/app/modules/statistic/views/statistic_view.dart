@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -55,51 +54,55 @@ class StatisticView extends GetView<StatisticController> {
           ),
           // Positioned Month Section (keeps your original design)
           Positioned(
-            top: 90,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_left),
-                    color: Colors.white,
-                    iconSize: 40,
-                    onPressed: () {
-                      controller.changeMonth(-1);
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
-                  ),
-                  Expanded(
-                    child: Obx(
-                        () => buildMonthContainer(controller.previousMonth)),
-                  ),
-                  SizedBox(width: 3),
-                  Expanded(
-                    child: Obx(() =>
-                        buildMonthContainer(controller.selectedMonth, true)),
-                  ),
-                  SizedBox(width: 3),
-                  Expanded(
-                    child: Obx(() => buildMonthContainer(controller.nextMonth)),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.arrow_right),
-                    color: Colors.white,
-                    iconSize: 40,
-                    onPressed: () {
-                      controller.changeMonth(1);
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
-                  ),
-                ],
-              ),
-            ),
-          ),
+              top: 90,
+              left: 0,
+              right: 0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.arrow_left),
+                      color: Colors.white,
+                      iconSize: 40,
+                      onPressed: () {
+                        controller.changeMonth(-1);
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(
+                        minWidth: 40, // Mengatur ukuran minimal tombol
+                      ),
+                    ),
+                    Expanded(
+                      child: Obx(
+                          () => buildMonthContainer(controller.previousMonth)),
+                    ),
+                    SizedBox(width: 3),
+                    Expanded(
+                      child: Obx(() =>
+                          buildMonthContainer(controller.selectedMonth, true)),
+                    ),
+                    SizedBox(width: 3),
+                    Expanded(
+                      child:
+                          Obx(() => buildMonthContainer(controller.nextMonth)),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.arrow_right),
+                      color: Colors.white,
+                      iconSize: 40,
+                      onPressed: () {
+                        controller.changeMonth(1);
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(
+                        minWidth: 40, // Mengatur ukuran minimal tombol
+                      ),
+                    ),
+                  ],
+                ),
+              )),
           // Main content
           Padding(
             padding: const EdgeInsets.only(top: 160, left: 16, right: 16),
@@ -134,66 +137,79 @@ class StatisticView extends GetView<StatisticController> {
                         ),
                         SizedBox(height: 10),
                         Obx(() {
-                          double totalIncome = controller.income
-                              .reduce((a, b) => a + b)
-                              .toDouble();
-                          double totalExpense = controller.expense
-                              .reduce((a, b) => a + b)
-                              .toDouble();
+                          if (controller.income.isEmpty &&
+                              controller.expense.isEmpty) {
+                            return Text('Tidak ada data');
+                          } else {
+                            // Hitung total pemasukan dan pengeluaran berdasarkan data yang difilter
+                            double totalIncome = controller.income.isNotEmpty
+                                ? controller.income
+                                    .reduce((a, b) => a + b)
+                                    .toDouble()
+                                : 0.0;
+                            double totalExpense = controller.expense.isNotEmpty
+                                ? controller.expense
+                                    .reduce((a, b) => a + b)
+                                    .toDouble()
+                                : 0.0;
 
-                          return SizedBox(
-                            height: 200,
-                            child: BarChart(
-                              BarChartData(
-                                barGroups: [
-                                  BarChartGroupData(
-                                    x: 0,
-                                    barRods: [
-                                      BarChartRodData(
-                                        toY: totalIncome,
-                                        color: Colors.green,
-                                        width: 50,
-                                        borderRadius: BorderRadius.circular(10),
+                            return SizedBox(
+                              height: 200,
+                              child: BarChart(
+                                BarChartData(
+                                  barGroups: [
+                                    BarChartGroupData(
+                                      x: 0,
+                                      barRods: [
+                                        BarChartRodData(
+                                          toY: totalIncome,
+                                          color: Colors.green,
+                                          width: 50,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                      ],
+                                    ),
+                                    BarChartGroupData(
+                                      x: 1,
+                                      barRods: [
+                                        BarChartRodData(
+                                          toY: totalExpense,
+                                          color: Colors.red,
+                                          width: 50,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                  borderData: FlBorderData(show: false),
+                                  gridData: FlGridData(show: false),
+                                  titlesData: FlTitlesData(
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: true),
+                                    ),
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        getTitlesWidget:
+                                            (double value, TitleMeta meta) {
+                                          if (value == 0) {
+                                            return Text('Pemasukan');
+                                          } else if (value == 1) {
+                                            return Text('Pengeluaran');
+                                          }
+                                          return Text('');
+                                        },
                                       ),
-                                    ],
-                                  ),
-                                  BarChartGroupData(
-                                    x: 1,
-                                    barRods: [
-                                      BarChartRodData(
-                                        toY: totalExpense,
-                                        color: Colors.red,
-                                        width: 50,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                                borderData: FlBorderData(show: false),
-                                gridData: FlGridData(show: false),
-                                titlesData: FlTitlesData(
-                                  leftTitles: AxisTitles(
-                                    sideTitles: SideTitles(showTitles: true),
-                                  ),
-                                  bottomTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      getTitlesWidget:
-                                          (double value, TitleMeta meta) {
-                                        if (value == 0) {
-                                          return Text('Pemasukan');
-                                        } else if (value == 1) {
-                                          return Text('Pengeluaran');
-                                        }
-                                        return Text('');
-                                      },
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          );
+                            );
+                          }
                         }),
+
                         SizedBox(height: 10),
                         // Add labels and values below the bar chart
                         Row(
@@ -201,34 +217,37 @@ class StatisticView extends GetView<StatisticController> {
                           children: [
                             Column(
                               children: [
-                                Text(
-                                  'Rp. 100.000,00',
-                                  style: TextStyle(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.bold),
-                                ),
+                                Obx(() => Text(
+                                      'Rp. ${controller.totalIncome.value}',
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )),
                                 Text('Pemasukan'),
                               ],
                             ),
                             Column(
                               children: [
-                                Text(
-                                  'Rp. 10.000,00',
-                                  style: TextStyle(
-                                      color: Colors.red,
-                                      fontWeight: FontWeight.bold),
-                                ),
+                                Obx(() => Text(
+                                      'Rp. ${controller.totalExpense.value}',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )),
                                 Text('Pengeluaran'),
                               ],
                             ),
                             Column(
                               children: [
-                                Text(
-                                  'Rp. 10.000.000,00',
-                                  style: TextStyle(
-                                      color: Colors.blue,
-                                      fontWeight: FontWeight.bold),
-                                ),
+                                Obx(() => Text(
+                                      'Rp. ${controller.totalBalance.value}',
+                                      style: TextStyle(
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )),
                                 Text('Saldo'),
                               ],
                             ),
@@ -238,20 +257,18 @@ class StatisticView extends GetView<StatisticController> {
                     ),
                   ),
                   SizedBox(height: 20),
-                  // 'Pengeluaran Berdasarkan Kategori' pie chart
                   Text(
                     'Pengeluaran Berdasarkan Kategori',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 10), // Reduced spacing
+                  // 'Pengeluaran Berdasarkan Kategori' pie chart
                   Container(
                     height: 200,
-                    padding: EdgeInsets.all(16), // Added padding for neatness
+                    padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                          color: Colors.white, width: 2), // White border
+                      border: Border.all(color: Colors.white, width: 2),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.grey.withOpacity(0.2),
@@ -261,33 +278,20 @@ class StatisticView extends GetView<StatisticController> {
                         ),
                       ],
                     ),
-                    child: PieChart(
-                      PieChartData(
-                        sections: [
-                          PieChartSectionData(
-                            color: Colors.green,
-                            value: 40,
-                            title: '40%',
-                            radius: 50,
+                    child: Obx(() {
+                      if (controller.pieChartData.isEmpty) {
+                        return Text('Tidak ada data');
+                      } else {
+                        return PieChart(
+                          PieChartData(
+                            sections: controller.pieChartData,
+                            centerSpaceRadius: 40,
+                            sectionsSpace: 2,
                           ),
-                          PieChartSectionData(
-                            color: Colors.orange,
-                            value: 30,
-                            title: '30%',
-                            radius: 50,
-                          ),
-                          PieChartSectionData(
-                            color: Colors.red,
-                            value: 30,
-                            title: '30%',
-                            radius: 50,
-                          ),
-                        ],
-                        centerSpaceRadius: 40,
-                        sectionsSpace: 2,
-                      ),
-                    ),
-                  ),
+                        );
+                      }
+                    }),
+                  )
                 ],
               ),
             ),

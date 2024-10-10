@@ -15,8 +15,11 @@ dependencies:
   fl_chart: 
   intl : 
   font_awesome_flutter:
+  images_picker:
+  marquee:
   flutter: 
     sdk: flutter
+  image_picker: ^1.1.2
 
 dev_dependencies: 
   flutter_lints: ^3.0.0
