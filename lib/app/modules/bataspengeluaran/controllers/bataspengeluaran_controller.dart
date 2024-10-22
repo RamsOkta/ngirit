@@ -11,6 +11,17 @@ class BataspengeluaranController extends GetxController {
   var selectedDates = ''.obs;
   var accounts = <Map<String, dynamic>>[].obs;
   var saldo = 0.obs;
+  // Define saldo variable
+  var selectedTab = 0.obs; // New list for credit cards
+  var selectedAkun = ''.obs;
+  var selectedKategori = ''.obs;
+
+  var deskripsi = ''.obs;
+  var creditCards = <Map<String, dynamic>>[].obs;
+
+  TextEditingController deskripsiController = TextEditingController();
+
+  TextEditingController nominalController = TextEditingController();
 
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final FirebaseAuth auth = FirebaseAuth.instance;
@@ -23,19 +34,13 @@ class BataspengeluaranController extends GetxController {
   var income = 0.obs;
   var expense = 0.obs;
   var balance = 0.obs;
-  var selectedTab = 0.obs; // New list for credit cards
-  var selectedAkun = ''.obs;
-  var selectedKategori = ''.obs;
-
-  var deskripsi = ''.obs; // Variabel untuk menyimpan deskripsi
-  TextEditingController deskripsiController = TextEditingController();
-
-  TextEditingController nominalController = TextEditingController();
 
   @override
   void onInit() {
     super.onInit();
     fetchTransactions(); // Panggil saat controller diinisialisasi
+    listenToAccountUpdates();
+    listenToCreditCardUpdates();
   }
 
   void onClose() {
@@ -238,9 +243,7 @@ class BataspengeluaranController extends GetxController {
       case 1:
         collection = 'pendapatan';
         break;
-      case 2:
-        collection = 'transfer';
-        break;
+
       default:
         collection = 'pengeluaran';
     }
@@ -325,6 +328,37 @@ class BataspengeluaranController extends GetxController {
       }
     } catch (e) {
       Get.snackbar('Error', 'Terjadi kesalahan: $e');
+    }
+  }
+
+  void listenToCreditCardUpdates() {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        FirebaseFirestore.instance
+            .collection('kartu_kredit') // Pastikan nama koleksi sudah sesuai
+            .where('user_id', isEqualTo: user.uid)
+            .snapshots()
+            .listen((ccSnapshot) {
+          creditCards.clear();
+
+          for (var doc in ccSnapshot.docs) {
+            var ccData = doc.data();
+
+            // Debugging: Cetak data yang diambil
+            print('Credit card data: $ccData');
+
+            creditCards.add({
+              'namaKartu': ccData['namaKartu'] ?? 'No Name',
+              'ikonKartu':
+                  ccData['ikonKartu'] ?? '', // Jika tidak ada ikon, kosong
+              'limitKredit': ccData['limitKredit'] ?? '',
+            });
+          }
+        });
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to load credit cards');
     }
   }
 }

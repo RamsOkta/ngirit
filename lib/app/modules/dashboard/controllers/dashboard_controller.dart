@@ -14,8 +14,8 @@ class DashboardController extends GetxController {
   var saldo = 0.obs; // Default saldo 0
   var accounts = <Map<String, dynamic>>[].obs;
   var creditCards = <Map<String, dynamic>>[].obs;
-  var selectedTab = 0.obs; // New list for credit cards
   var pengeluaranPerCard = {}.obs; // Define pengeluaranPerCard
+  var selectedTab = 0.obs; // New list for credit cards
   var selectedAkun = ''.obs;
   var selectedKategori = ''.obs;
   var selectedDate = ''.obs;

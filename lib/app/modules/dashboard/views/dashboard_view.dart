@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../controllers/dashboard_controller.dart';
 
 class DashboardView extends StatelessWidget {
@@ -136,13 +137,14 @@ class DashboardView extends StatelessWidget {
                               child: Obx(() {
                                 return Text(
                                   controller.isSaldoVisible.value
-                                      ? 'Rp. ${controller.saldo.value}'
+                                      ? '${NumberFormat.currency(locale: 'id', symbol: 'Rp', decimalDigits: 0).format(controller.saldo.value)}'
                                       : '******',
                                   style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: "OpenSans"),
+                                    color: Colors.black,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: "OpenSans",
+                                  ),
                                 );
                               }),
                             ),
@@ -163,10 +165,16 @@ class DashboardView extends StatelessWidget {
                                     int amount = int.parse(amountString);
                                     amountColor =
                                         amount >= 0 ? Colors.blue : Colors.red;
-                                    amountString = 'Rp. $amountString';
+
+                                    // Memformat saldo dengan NumberFormat
+                                    amountString = NumberFormat.currency(
+                                      locale: 'id',
+                                      symbol: 'Rp',
+                                      decimalDigits: 0,
+                                    ).format(amount);
                                   } catch (e) {
                                     amountColor = Colors.grey;
-                                    amountString = 'Rp. 0';
+                                    amountString = 'Rp 0';
                                   }
 
                                   String iconUrl =
@@ -343,7 +351,12 @@ class DashboardView extends StatelessWidget {
                                                   ),
                                                   SizedBox(height: 8),
                                                   Text(
-                                                    'Rp ${(limitKredit - fakturSaatIni).toStringAsFixed(0)}',
+                                                    // Memformat nilai limitKredit - fakturSaatIni dengan NumberFormat
+                                                    '${NumberFormat.currency(
+                                                      locale: 'id',
+                                                      symbol: 'Rp',
+                                                      decimalDigits: 0,
+                                                    ).format(limitKredit - fakturSaatIni)}',
                                                     style: TextStyle(
                                                       color: (limitKredit -
                                                                   fakturSaatIni) <
@@ -369,7 +382,12 @@ class DashboardView extends StatelessWidget {
                                                   ),
                                                   SizedBox(height: 8),
                                                   Text(
-                                                    '-Rp ${fakturSaatIni.toStringAsFixed(0)}',
+                                                    // Memformat nilai faktur dengan NumberFormat
+                                                    '-${NumberFormat.currency(
+                                                      locale: 'id',
+                                                      symbol: 'Rp',
+                                                      decimalDigits: 0,
+                                                    ).format(fakturSaatIni)}',
                                                     style: TextStyle(
                                                       color: Colors.red,
                                                       fontWeight:

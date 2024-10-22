@@ -266,10 +266,10 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
                       backgroundColor =
                           Colors.green; // Warna hijau untuk Pendapatan
                       break;
-                    case 2:
-                      backgroundColor =
-                          Colors.blue; // Warna biru untuk Transfer
-                      break;
+                    // case 2:
+                    //   backgroundColor =
+                    //       Colors.blue; // Warna biru untuk Transfer
+                    //   break;
                     default:
                       backgroundColor = Colors.red;
                   }
@@ -286,7 +286,7 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
                           children: [
                             _buildTabItem('Pengeluaran', Colors.red, 0),
                             _buildTabItem('Pendapatan', Colors.green, 1),
-                            _buildTabItem('Transfer', Colors.blue, 2),
+                            // _buildTabItem('Transfer', Colors.blue, 2),
                           ],
                         ),
                         // Input angka "0,00" di dalam background color
@@ -349,8 +349,8 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
                               return _buildPengeluaranForm(context);
                             case 1:
                               return _buildPendapatanForm(context);
-                            case 2:
-                              return _buildTransferForm();
+                            // case 2:
+                            //   return _buildTransferForm();
                             default:
                               return _buildPengeluaranForm(context);
                           }
@@ -397,7 +397,7 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
   }
 
 // Fungsi untuk membuat text field di dalam bottom sheet
-  // Fungsi untuk membuat TabItem di dalam bottom sheet
+// Fungsi untuk membuat TabItem di dalam bottom sheet
   Widget _buildTabItem(String title, Color color, int index) {
     return Expanded(
       child: Obx(() {
@@ -535,10 +535,6 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
                             ? controller.selectedAkun.value
                             : 'Pilih Akun', // Placeholder
                       ),
-                    ),
-                    Divider(
-                      thickness: 1, // Tebal garis bawah
-                      color: Colors.grey, // Warna garis bawah
                     ),
                   ],
                 ),
@@ -753,19 +749,6 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
     );
   }
 
-  Widget _buildTransferForm() {
-    return Column(
-      children: [
-        _buildTextField('Deskripsi', Icons.edit),
-        _buildTextField('Kategori', Icons.list),
-        _buildTextField('Dibayar dengan', Icons.wallet_giftcard),
-        _buildTextField('Tanggal', Icons.calendar_today),
-      ],
-    );
-  }
-
-// Fungsi untuk membuat text field di dalam bottom sheet
-
   Widget _buildTextField(String label, IconData icon) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -833,7 +816,6 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
   void _showAkunBottomSheet(BuildContext context) {
     final List<Map<String, dynamic>> akunList = [
       {'nama_akun': 'BNI', 'icon': 'assets/icons/bni.jpg'},
-
       // Akun lainnya...
     ];
 
@@ -847,32 +829,41 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
           padding: EdgeInsets.all(16.0),
           height: 300,
           child: Obx(() {
-            if (controller.accounts.isEmpty) {
+            if (controller.accounts.isEmpty && controller.creditCards.isEmpty) {
               return Center(
-                child: Text('Tidak ada akun tersedia'),
+                child: Text('Tidak ada akun atau kartu tersedia'),
               );
             } else {
               return ListView.builder(
-                itemCount: controller.accounts.length,
+                itemCount:
+                    controller.accounts.length + controller.creditCards.length,
                 itemBuilder: (context, index) {
-                  var akun = controller.accounts[index];
-
-                  return ListTile(
-                    leading: Icon(
-                        Icons.account_balance_wallet), // Ikon bisa disesuaikan
-
-                    title: Text(akun['nama_akun']),
-
-                    subtitle: Text('Saldo: ${akun['saldo_awal']}'),
-
-                    onTap: () {
-                      // Update selected akun
-
-                      controller.selectedAkun.value = akun['nama_akun'];
-
-                      Navigator.pop(context); // Tutup bottom sheet
-                    },
-                  );
+                  Map<String, dynamic> item;
+                  if (index < controller.accounts.length) {
+                    item = controller.accounts[index];
+                    return ListTile(
+                      leading: Icon(Icons.account_balance_wallet),
+                      title: Text(item['nama_akun']),
+                      subtitle: Text('Saldo: ${item['saldo_awal']}'),
+                      onTap: () {
+                        controller.selectedAkun.value = item['nama_akun'];
+                        Navigator.pop(context);
+                      },
+                    );
+                  } else {
+                    // Menampilkan data kartu kredit
+                    item = controller
+                        .creditCards[index - controller.accounts.length];
+                    return ListTile(
+                      leading: Icon(Icons.credit_card),
+                      title: Text(item['namaKartu']),
+                      subtitle: Text('Limit: ${item['limitKredit']}'),
+                      onTap: () {
+                        controller.selectedAkun.value = item['namaKartu'];
+                        Navigator.pop(context);
+                      },
+                    );
+                  }
                 },
               );
             }
@@ -882,7 +873,7 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
     );
   }
 
-  // Fungsi buttomsheet kategori pengeluaran
+// Fungsi buttomsheet kategori pengeluaran
 
   void _showKategoriBottomSheet(BuildContext context) {
     final List<Map<String, dynamic>> kategoriList = [
@@ -890,6 +881,16 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
       {'labels': 'Transportasi', 'icon': 'assets/icons/car.png'},
       {'labels': 'Belanja', 'icon': 'assets/icons/shop.png'},
       {'labels': 'Hiburan', 'icon': 'assets/icons/cinema.png'},
+      {'labels': 'Pendidikan', 'icon': 'assets/icons/pendidikan.png'},
+      {'labels': 'Rumah Tangga', 'icon': 'assets/icons/rt.png'},
+      {'labels': 'Investasi', 'icon': 'assets/icons/investasi.png'},
+      {'labels': 'Kesehatan', 'icon': 'assets/icons/kesehatan.png'},
+      {'labels': 'Liburan', 'icon': 'assets/icons/liburan.png'},
+      {'labels': 'Perbaikan Rumah', 'icon': 'assets/icons/rumah.png'},
+      {'labels': 'Pakaian', 'icon': 'assets/icons/outfit.png'},
+      {'labels': 'Internet', 'icon': 'assets/icons/internet.png'},
+      {'labels': 'Olahraga & Gym', 'icon': 'assets/icons/gym.png'},
+      {'labels': 'Lainnya', 'icon': 'assets/icons/lainnya.png'},
     ];
 
     showModalBottomSheet(
@@ -900,7 +901,8 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
       builder: (BuildContext context) {
         return Container(
           padding: EdgeInsets.all(16.0),
-          height: 250,
+          height:
+              MediaQuery.of(context).size.height * 0.6, // 60% of screen height
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -909,36 +911,62 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: kategoriList.map((kategori) {
-                  return GestureDetector(
-                    onTap: () {
-                      // Simpan kategori yang dipilih di controller
-                      controller.selectedKategori.value = kategori['labels'];
-                      Navigator.pop(context); // Tutup bottom sheet
-                    },
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 30, // Ukuran icon
-                          backgroundColor: Colors.grey[200],
-                          child: Image.asset(
-                            kategori['icon'], // Menampilkan gambar dari assets
-                            width: 28, // Ukuran gambar
-                            height: 28,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          kategori['labels'], // Menggunakan 'labels' yang benar
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ],
+              Expanded(
+                child: SingleChildScrollView(
+                  child: GridView.builder(
+                    shrinkWrap:
+                        true, // Prevents GridView from expanding infinitely
+                    physics:
+                        NeverScrollableScrollPhysics(), // Disable GridView scrolling
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4, // Number of columns in grid
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio:
+                          0.7, // Adjusted for better space for text
                     ),
-                  );
-                }).toList(),
+                    itemCount: kategoriList.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final kategori = kategoriList[index];
+                      return GestureDetector(
+                        onTap: () {
+                          // Simpan kategori yang dipilih di controller
+                          controller.selectedKategori.value =
+                              kategori['labels'];
+                          Navigator.pop(context); // Tutup bottom sheet
+                        },
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 30, // Ukuran icon
+                              backgroundColor: Colors.grey[200],
+                              child: Image.asset(
+                                kategori[
+                                    'icon'], // Menampilkan gambar dari assets
+                                width: 28, // Ukuran gambar
+                                height: 28,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Container(
+                              width: 70, // Batasan lebar teks
+                              child: Text(
+                                kategori[
+                                    'labels'], // Menggunakan 'labels' yang benar
+                                style: TextStyle(fontSize: 12),
+                                textAlign: TextAlign.center, // Rata tengah
+                                softWrap: true, // Mengizinkan pembungkusan teks
+                                overflow:
+                                    TextOverflow.visible, // Tidak overflow
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ],
           ),
@@ -947,13 +975,14 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
     );
   }
 
-  // Fungsi buttomsheet kategori penghasilan
+// Fungsi buttomsheet kategori penghasilan
   void _showKategoriPendapatanBottomSheet(BuildContext context) {
     final List<Map<String, dynamic>> kategoriPendapatanList = [
-      {'label': 'Gaji', 'icon': 'assets/icons/salary.png'},
-      {'label': 'Investasi', 'icon': 'assets/icons/investment.png'},
-      {'label': 'Hadiah', 'icon': 'assets/icons/gift.png'},
-      {'label': 'Bonus', 'icon': 'assets/icons/bonus.png'},
+      {'label': 'Gaji', 'icon': 'assets/icons/gaji.png'},
+      {'label': 'Investasi', 'icon': 'assets/icons/investasi.png'},
+      {'label': 'Bonus', 'icon': 'assets/icons/hadiah.png'},
+      {'label': 'Uang Saku', 'icon': 'assets/icons/uangsaku.png'},
+      {'label': 'Lainnya', 'icon': 'assets/icons/lainnya.png'},
     ];
 
     showModalBottomSheet(
@@ -964,45 +993,71 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
       builder: (BuildContext context) {
         return Container(
           padding: EdgeInsets.all(16.0),
-          height: 250,
+          height:
+              MediaQuery.of(context).size.height * 0.6, // 60% of screen height
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Pilih Kategori Pendapatan',
+                'Pilih Kategori',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: kategoriPendapatanList.map((kategori) {
-                  return GestureDetector(
-                    onTap: () {
-                      // Simpan kategori yang dipilih di controller
-                      controller.selectedKategori.value = kategori['label'];
-                      Navigator.pop(context); // Tutup bottom sheet
-                    },
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 30, // Ukuran icon
-                          backgroundColor: Colors.grey[200],
-                          child: Image.asset(
-                            kategori['icon'], // Menampilkan gambar dari assets
-                            width: 28, // Ukuran gambar
-                            height: 28,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          kategori['label'], // Menggunakan 'labels' yang benar
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ],
+              Expanded(
+                child: SingleChildScrollView(
+                  child: GridView.builder(
+                    shrinkWrap:
+                        true, // Prevents GridView from expanding infinitely
+                    physics:
+                        NeverScrollableScrollPhysics(), // Disable GridView scrolling
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4, // Number of columns in grid
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio:
+                          0.7, // Adjusted for better space for text
                     ),
-                  );
-                }).toList(),
+                    itemCount: kategoriPendapatanList.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final kategori = kategoriPendapatanList[index];
+                      return GestureDetector(
+                        onTap: () {
+                          // Simpan kategori yang dipilih di controller
+                          controller.selectedKategori.value = kategori['label'];
+                          Navigator.pop(context); // Tutup bottom sheet
+                        },
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 30, // Ukuran icon
+                              backgroundColor: Colors.grey[200],
+                              child: Image.asset(
+                                kategori[
+                                    'icon'], // Menampilkan gambar dari assets
+                                width: 28, // Ukuran gambar
+                                height: 28,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Container(
+                              width: 70, // Batasan lebar teks
+                              child: Text(
+                                kategori[
+                                    'label'], // Menggunakan 'labels' yang benar
+                                style: TextStyle(fontSize: 12),
+                                textAlign: TextAlign.center, // Rata tengah
+                                softWrap: true, // Mengizinkan pembungkusan teks
+                                overflow:
+                                    TextOverflow.visible, // Tidak overflow
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ],
           ),
@@ -1011,69 +1066,60 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
     );
   }
 
+  final List<Map<String, String>> categories = [
+    {'labels': 'Makan', 'icon': 'assets/icons/food.png'},
+    {'labels': 'Transportasi', 'icon': 'assets/icons/car.png'},
+    {'labels': 'Belanja', 'icon': 'assets/icons/shop.png'},
+    {'labels': 'Hiburan', 'icon': 'assets/icons/cinema.png'},
+    {'labels': 'Pendidikan', 'icon': 'assets/icons/pendidikan.png'},
+    {'labels': 'Rumah Tangga', 'icon': 'assets/icons/rt.png'},
+    {'labels': 'Investasi', 'icon': 'assets/icons/investasi.png'},
+    {'labels': 'Kesehatan', 'icon': 'assets/icons/kesehatan.png'},
+    {'labels': 'Liburan', 'icon': 'assets/icons/liburan.png'},
+    {'labels': 'Perbaikan Rumah', 'icon': 'assets/icons/rumah.png'},
+    {'labels': 'Pakaian', 'icon': 'assets/icons/outfit.png'},
+    {'labels': 'Internet', 'icon': 'assets/icons/internet.png'},
+    {'labels': 'Olahraga & Gym', 'icon': 'assets/icons/gym.png'},
+    {'labels': 'Lainnya', 'icon': 'assets/icons/lainnya.png'},
+  ];
+
+  // Fungsi untuk menampilkan pilihan kategori
   void showCategorySelection(
       BuildContext context, List<String> existingCategories) {
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white, // Set the background color
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20), // Rounded corners
+        context: context,
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-      ),
-      builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Belanja
-              ListTile(
-                leading: Icon(Icons.shopping_cart),
-                title: Text('Belanja'),
-                enabled: !existingCategories
-                    .contains('Belanja'), // Disable if already exists
-                onTap: existingCategories.contains('Belanja')
-                    ? null
-                    : () {
-                        Navigator.pop(
-                            context); // Close the category selection sheet
-                        _showValueLimitModal(context, 'Belanja');
-                      },
+        builder: (BuildContext context) {
+          return SingleChildScrollView(
+            // Tambahkan ini
+            child: Container(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: categories.map((category) {
+                  String label = category['labels']!;
+                  String iconPath = category['icon']!;
+
+                  return ListTile(
+                    leading: Image.asset(iconPath, width: 24, height: 24),
+                    title: Text(label),
+                    enabled: !existingCategories.contains(label),
+                    onTap: existingCategories.contains(label)
+                        ? null
+                        : () {
+                            Navigator.pop(
+                                context); // Close the category selection sheet
+                            _showValueLimitModal(context, label);
+                          },
+                  );
+                }).toList(),
               ),
-              // Alat Mandi
-              ListTile(
-                leading: Icon(Icons.bathtub),
-                title: Text('Alat Mandi'),
-                enabled: !existingCategories
-                    .contains('Alat Mandi'), // Disable if already exists
-                onTap: existingCategories.contains('Alat Mandi')
-                    ? null
-                    : () {
-                        Navigator.pop(
-                            context); // Close the category selection sheet
-                        _showValueLimitModal(context, 'Alat Mandi');
-                      },
-              ),
-              // Makan
-              ListTile(
-                leading: Icon(Icons.fastfood),
-                title: Text('Makan'),
-                enabled: !existingCategories
-                    .contains('Makan'), // Disable if already exists
-                onTap: existingCategories.contains('Makan')
-                    ? null
-                    : () {
-                        Navigator.pop(
-                            context); // Close the category selection sheet
-                        _showValueLimitModal(context, 'Makan');
-                      },
-              ),
-            ],
-          ),
-        );
-      },
-    );
+            ),
+          );
+        });
   }
 
   // Month Container with Month on top and Year below

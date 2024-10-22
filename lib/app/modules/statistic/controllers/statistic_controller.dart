@@ -17,8 +17,31 @@ class StatisticController extends GetxController {
   var totalExpense = 0.obs; // Total pengeluaran
   var totalBalance = 0.obs; // Total saldo
   var pieChartData = <PieChartSectionData>[].obs;
+  var saldo = 0.obs; // Define saldo variable
+  var selectedTab = 0.obs; // New list for credit cards
+  var selectedAkun = ''.obs;
+  var selectedKategori = ''.obs;
+  var selectedDates = ''.obs;
+  var deskripsi = ''.obs;
+  var creditCards = <Map<String, dynamic>>[].obs;
+  var accounts = <Map<String, dynamic>>[].obs;
+  TextEditingController deskripsiController = TextEditingController();
+
+  TextEditingController nominalController = TextEditingController();
 
   var selectedDate = DateTime.now().obs;
+
+  void onInit() {
+    fetchTotalIncome();
+    fetchTotalExpense();
+    fetchTotalBalance();
+    fetchIncome();
+    fetchExpense();
+    fetchExpenseByCategory();
+    listenToAccountUpdates();
+    listenToCreditCardUpdates();
+    super.onInit();
+  }
 
   // Ambil userId dari pengguna yang sedang login
   String get userId => _auth.currentUser?.uid ?? '';
@@ -218,106 +241,204 @@ class StatisticController extends GetxController {
       PieChartSectionData(
         color: Colors.green,
         value: categoryTotals['Makan'] ?? 0.0,
-        title: '${categoryTotals['Makan']?.toStringAsFixed(1) ?? '0'}%',
+        title: 'Makan', // Tampilkan nama kategori di title
         radius: 50,
       ),
       PieChartSectionData(
-        color: Colors.orange,
+        color: Colors.blue,
         value: categoryTotals['Transportasi'] ?? 0.0,
-        title: '${categoryTotals['Transportasi']?.toStringAsFixed(1) ?? '0'}%',
+        title: 'Transportasi',
         radius: 50,
       ),
       PieChartSectionData(
         color: Colors.red,
         value: categoryTotals['Belanja'] ?? 0.0,
-        title: '${categoryTotals['Belanja']?.toStringAsFixed(1) ?? '0'}%',
-        radius: 50,
-      ),
-      PieChartSectionData(
-        color: Colors.blue,
-        value: categoryTotals['Hiburan'] ?? 0.0,
-        title: '${categoryTotals['Hiburan']?.toStringAsFixed(1) ?? '0'}%',
+        title: 'Belanja',
         radius: 50,
       ),
       PieChartSectionData(
         color: Colors.purple,
+        value: categoryTotals['Hiburan'] ?? 0.0,
+        title: 'Hiburan',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.orange,
         value: categoryTotals['Pendidikan'] ?? 0.0,
-        title: '${categoryTotals['Pendidikan']?.toStringAsFixed(1) ?? '0'}%',
-        radius: 50,
-      ),
-      PieChartSectionData(
-        color: Colors.yellow,
-        value: categoryTotals['Rumah Tangga'] ?? 0.0,
-        title: '${categoryTotals['Rumah Tangga']?.toStringAsFixed(1) ?? '0'}%',
-        radius: 50,
-      ),
-      PieChartSectionData(
-        color: Colors.brown,
-        value: categoryTotals['Investasi'] ?? 0.0,
-        title: '${categoryTotals['Investasi']?.toStringAsFixed(1) ?? '0'}%',
+        title: 'Pendidikan',
         radius: 50,
       ),
       PieChartSectionData(
         color: Colors.teal,
-        value: categoryTotals['Kesehatan'] ?? 0.0,
-        title: '${categoryTotals['Kesehatan']?.toStringAsFixed(1) ?? '0'}%',
+        value: categoryTotals['Rumah Tangga'] ?? 0.0,
+        title: 'Rumah Tangga',
         radius: 50,
       ),
       PieChartSectionData(
-        color: Colors.cyan,
-        value: categoryTotals['Liburan'] ?? 0.0,
-        title: '${categoryTotals['Liburan']?.toStringAsFixed(1) ?? '0'}%',
+        color: Colors.indigo,
+        value: categoryTotals['Investasi'] ?? 0.0,
+        title: 'Investasi',
         radius: 50,
       ),
       PieChartSectionData(
         color: Colors.pink,
+        value: categoryTotals['Kesehatan'] ?? 0.0,
+        title: 'Kesehatan',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.amber,
+        value: categoryTotals['Liburan'] ?? 0.0,
+        title: 'Liburan',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.cyan,
         value: categoryTotals['Perbaikan Rumah'] ?? 0.0,
-        title:
-            '${categoryTotals['Perbaikan Rumah']?.toStringAsFixed(1) ?? '0'}%',
+        title: 'Perbaikan Rumah',
         radius: 50,
       ),
       PieChartSectionData(
         color: Colors.lime,
         value: categoryTotals['Pakaian'] ?? 0.0,
-        title: '${categoryTotals['Pakaian']?.toStringAsFixed(1) ?? '0'}%',
+        title: 'Pakaian',
         radius: 50,
       ),
       PieChartSectionData(
-        color: Colors.indigo,
+        color: Colors.brown,
         value: categoryTotals['Internet'] ?? 0.0,
-        title: '${categoryTotals['Internet']?.toStringAsFixed(1) ?? '0'}%',
+        title: 'Internet',
         radius: 50,
       ),
       PieChartSectionData(
         color: Colors.grey,
         value: categoryTotals['Olahraga & Gym'] ?? 0.0,
-        title:
-            '${categoryTotals['Olahraga & Gym']?.toStringAsFixed(1) ?? '0'}%',
+        title: 'Olahraga & Gym',
         radius: 50,
       ),
       PieChartSectionData(
         color: Colors.black,
         value: categoryTotals['Lainnya'] ?? 0.0,
-        title: '${categoryTotals['Lainnya']?.toStringAsFixed(1) ?? '0'}%',
+        title: 'Lainnya',
         radius: 50,
       ),
     ];
   }
 
-  // Inisialisasi dan fetch data saat controller dibuat
-  @override
-  void onInit() {
-    super.onInit();
+  void onClose() {
+    deskripsiController.dispose();
+    nominalController.dispose(); // Dispose nominalController juga
+    super.onClose();
+  }
 
-    fetchIncome();
-    fetchExpense();
-    fetchTotalIncome();
-    fetchTotalExpense();
-    fetchExpenseByCategory();
+  // Function to save form data to Firestor
 
-    // Hitung ulang saldo ketika total pemasukan atau pengeluaran berubah
-    everAll([totalIncome, totalExpense], (_) {
-      fetchTotalBalance();
-    });
+  // Listen for account updates and calculate total saldo
+  void listenToAccountUpdates() {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        FirebaseFirestore.instance
+            .collection('accounts')
+            .where('user_id', isEqualTo: user.uid)
+            .snapshots()
+            .listen((accountSnapshot) {
+          var totalSaldo = 0;
+          accounts.clear();
+
+          for (var doc in accountSnapshot.docs) {
+            var accountData = doc.data();
+            int saldoAwal = int.tryParse(accountData['saldo_awal']) ?? 0;
+
+            accounts.add({
+              'nama_akun': accountData['nama_akun'],
+              'saldo_awal': saldoAwal,
+              'icon': accountData['icon'] ?? '',
+            });
+
+            totalSaldo += saldoAwal;
+          }
+
+          saldo.value = totalSaldo;
+        });
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to load accounts');
+    }
+  }
+
+  // New function: Listen for credit card updates
+  void listenToCreditCardUpdates() {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        FirebaseFirestore.instance
+            .collection('kartu_kredit') // Pastikan nama koleksi sudah sesuai
+            .where('user_id', isEqualTo: user.uid)
+            .snapshots()
+            .listen((ccSnapshot) {
+          creditCards.clear();
+
+          for (var doc in ccSnapshot.docs) {
+            var ccData = doc.data();
+
+            // Debugging: Cetak data yang diambil
+            print('Credit card data: $ccData');
+
+            creditCards.add({
+              'namaKartu': ccData['namaKartu'] ?? 'No Name',
+              'ikonKartu':
+                  ccData['ikonKartu'] ?? '', // Jika tidak ada ikon, kosong
+              'limitKredit': ccData['limitKredit'] ?? '',
+            });
+          }
+        });
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to load credit cards');
+    }
+  }
+
+  Future<void> saveFormData(String nominal) async {
+    final controller = Get.find<StatisticController>();
+    String collection;
+    switch (controller.selectedTab.value) {
+      case 0:
+        collection = 'pengeluaran';
+        break;
+      case 1:
+        collection = 'pendapatan';
+        break;
+      // case 2:
+      //   collection = 'transfer';
+      //   break;
+      default:
+        collection = 'pengeluaran';
+    }
+
+    if (controller.selectedKategori.isNotEmpty &&
+        controller.selectedAkun.isNotEmpty &&
+        controller.selectedDates.isNotEmpty) {
+      try {
+        User? user = FirebaseAuth.instance.currentUser;
+
+        if (user != null) {
+          await FirebaseFirestore.instance.collection(collection).add({
+            'user_id': user.uid,
+            'nominal': nominal,
+            'deskripsi': controller.deskripsi.value,
+            'kategori': controller.selectedKategori.value,
+            'akun': controller.selectedAkun.value,
+            'tanggal': controller.selectedDates.value,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+          Get.snackbar('Success', 'Data berhasil disimpan ke $collection');
+        }
+      } catch (e) {
+        Get.snackbar('Error', 'Gagal menyimpan data ke $collection');
+      }
+    } else {
+      Get.snackbar('Error', 'Pastikan semua field diisi');
+    }
   }
 }

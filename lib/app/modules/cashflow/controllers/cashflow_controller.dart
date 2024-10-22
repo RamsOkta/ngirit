@@ -14,6 +14,7 @@ class CashflowController extends GetxController {
   var totalIncome = 0.0.obs; // Total pemasukan
   var totalExpense = 0.0.obs; // Total pengeluaran
   var totalBalance = 0.0.obs; // Total saldo
+  var selectedDates = ''.obs;
 
   var selectedDate = DateTime.now().obs; // Selected date
   var searchQuery = ''.obs; // Search query
@@ -271,49 +272,7 @@ class CashflowController extends GetxController {
     super.onClose();
   }
 
-  // Function to save form data to Firestore
-  Future<void> saveFormData(String nominal) async {
-    final controller = Get.find<CashflowController>();
-    String collection;
-    switch (controller.selectedTab.value) {
-      case 0:
-        collection = 'pengeluaran';
-        break;
-      case 1:
-        collection = 'pendapatan';
-        break;
-      case 2:
-        collection = 'transfer';
-        break;
-      default:
-        collection = 'pengeluaran';
-    }
-
-    if (controller.selectedKategori.isNotEmpty &&
-        controller.selectedAkun.isNotEmpty &&
-        controller.selectedDate.value != null) {
-      try {
-        User? user = FirebaseAuth.instance.currentUser;
-
-        if (user != null) {
-          await FirebaseFirestore.instance.collection(collection).add({
-            'user_id': user.uid,
-            'nominal': nominal,
-            'deskripsi': controller.deskripsi.value,
-            'kategori': controller.selectedKategori.value,
-            'akun': controller.selectedAkun.value,
-            'tanggal': controller.selectedDate.value,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-          Get.snackbar('Success', 'Data berhasil disimpan ke $collection');
-        }
-      } catch (e) {
-        Get.snackbar('Error', 'Gagal menyimpan data ke $collection');
-      }
-    } else {
-      Get.snackbar('Error', 'Pastikan semua field diisi');
-    }
-  }
+  // Function to save form data to Firestor
 
   // Listen for account updates and calculate total saldo
   void listenToAccountUpdates() {
@@ -378,6 +337,49 @@ class CashflowController extends GetxController {
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to load credit cards');
+    }
+  }
+
+  Future<void> saveFormData(String nominal) async {
+    final controller = Get.find<CashflowController>();
+    String collection;
+    switch (controller.selectedTab.value) {
+      case 0:
+        collection = 'pengeluaran';
+        break;
+      case 1:
+        collection = 'pendapatan';
+        break;
+      // case 2:
+      //   collection = 'transfer';
+      //   break;
+      default:
+        collection = 'pengeluaran';
+    }
+
+    if (controller.selectedKategori.isNotEmpty &&
+        controller.selectedAkun.isNotEmpty &&
+        controller.selectedDates.isNotEmpty) {
+      try {
+        User? user = FirebaseAuth.instance.currentUser;
+
+        if (user != null) {
+          await FirebaseFirestore.instance.collection(collection).add({
+            'user_id': user.uid,
+            'nominal': nominal,
+            'deskripsi': controller.deskripsi.value,
+            'kategori': controller.selectedKategori.value,
+            'akun': controller.selectedAkun.value,
+            'tanggal': controller.selectedDates.value,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+          Get.snackbar('Success', 'Data berhasil disimpan ke $collection');
+        }
+      } catch (e) {
+        Get.snackbar('Error', 'Gagal menyimpan data ke $collection');
+      }
+    } else {
+      Get.snackbar('Error', 'Pastikan semua field diisi');
     }
   }
 

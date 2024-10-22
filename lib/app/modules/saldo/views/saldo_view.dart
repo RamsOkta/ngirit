@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../controllers/saldo_controller.dart';
 
 class SaldoView extends StatelessWidget {
@@ -140,24 +141,38 @@ class SaldoView extends StatelessWidget {
                                             style:
                                                 TextStyle(color: Colors.grey),
                                           ),
+                                          // Menampilkan saldo akhir
                                           Text(
-                                            'Rp. ${account['saldo_akhir']}', // Menggunakan saldo akhir
+                                            'Rp. ${NumberFormat.currency(
+                                              locale: 'id',
+                                              symbol: '',
+                                              decimalDigits: 0,
+                                            ).format(account['saldo_akhir'])}', // Menggunakan saldo akhir
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                           SizedBox(height: 4),
-                                          // Menampilkan pendapatan dan pengeluaran
+// Menampilkan pendapatan
                                           Text(
-                                            'Pendapatan: Rp. ${account['total_pendapatan']}',
+                                            'Pendapatan: Rp. ${NumberFormat.currency(
+                                              locale: 'id',
+                                              symbol: '',
+                                              decimalDigits: 0,
+                                            ).format(account['total_pendapatan'])}',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: Colors.green,
                                             ),
                                           ),
+// Menampilkan pengeluaran
                                           Text(
-                                            'Pengeluaran: Rp. ${account['total_pengeluaran']}',
+                                            'Pengeluaran: Rp. ${NumberFormat.currency(
+                                              locale: 'id',
+                                              symbol: '',
+                                              decimalDigits: 0,
+                                            ).format(account['total_pengeluaran'])}',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: Colors.red,
