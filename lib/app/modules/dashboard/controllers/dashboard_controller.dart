@@ -7,16 +7,20 @@ import '../../home/views/home_view.dart';
 import '../../saldo/views/saldo_view.dart';
 
 class DashboardController extends GetxController {
+  FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseFirestore _firestore = FirebaseFirestore.instance;
   var selectedIndex = 0.obs;
   var username = ''.obs;
   var saldo = 0.obs; // Default saldo 0
   var accounts = <Map<String, dynamic>>[].obs;
   var creditCards = <Map<String, dynamic>>[].obs;
   var selectedTab = 0.obs; // New list for credit cards
+  var pengeluaranPerCard = {}.obs; // Define pengeluaranPerCard
   var selectedAkun = ''.obs;
   var selectedKategori = ''.obs;
   var selectedDate = ''.obs;
   var deskripsi = ''.obs; // Variabel untuk menyimpan deskripsi
+  var profileImageUrl = ''.obs;
   TextEditingController deskripsiController = TextEditingController();
 
   TextEditingController nominalController = TextEditingController();
@@ -34,24 +38,50 @@ class DashboardController extends GetxController {
     fetchUserData();
     listenToAccountUpdates();
     listenToCreditCardUpdates(); // New listener for credit cards
+    fetchProfileImage();
   }
 
   var isSaldoVisible = true.obs;
   var isFakturVisible = true.obs;
+  String get userId {
+    return _auth.currentUser?.uid ??
+        ''; // Mengembalikan UID pengguna yang sedang login
+  }
 
-  // Fetch user data (username)
-  Future<void> fetchUserData() async {
+  void fetchProfileImage() async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        var userDoc = await FirebaseFirestore.instance
+        _firestore
             .collection('users')
             .doc(user.uid)
-            .get();
+            .snapshots()
+            .listen((userDoc) {
+          if (userDoc.exists) {
+            // Misalkan URL gambar profil disimpan dengan nama field 'profilePictureUrl'
+            profileImageUrl.value = userDoc.data()?['profilePictureUrl'] ?? '';
+          }
+        });
+      }
+    } catch (e) {
+      print('Error fetching profile image: $e');
+    }
+  }
 
-        if (userDoc.exists) {
-          username.value = userDoc.data()?['username'] ?? '';
-        }
+  // Fungsi untuk mendengarkan perubahan data user (username)
+  void fetchUserData() {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .snapshots()
+            .listen((userDoc) {
+          if (userDoc.exists) {
+            username.value = userDoc.data()?['username'] ?? '';
+          }
+        });
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to load user data');
@@ -63,32 +93,88 @@ class DashboardController extends GetxController {
     try {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        // Mengawasi perubahan pada koleksi 'accounts'
         FirebaseFirestore.instance
             .collection('accounts')
             .where('user_id', isEqualTo: user.uid)
             .snapshots()
-            .listen((accountSnapshot) {
-          var totalSaldo = 0;
+            .listen((accountSnapshot) async {
           accounts.clear();
+          var totalSaldo = 0;
 
+          // Looping secara asinkron untuk setiap dokumen akun
           for (var doc in accountSnapshot.docs) {
             var accountData = doc.data();
+            String namaAkun = accountData['nama_akun'].toString().toUpperCase();
+
+            // Ambil saldo awal dari koleksi accounts
             int saldoAwal = int.tryParse(accountData['saldo_awal']) ?? 0;
 
-            accounts.add({
-              'nama_akun': accountData['nama_akun'],
-              'saldo_awal': saldoAwal,
-              'icon': accountData['icon'] ?? '',
+            // Stream real-time untuk pendapatan
+            var pendapatanStream = FirebaseFirestore.instance
+                .collection('pendapatan')
+                .where('akun', isEqualTo: namaAkun)
+                .where('user_id', isEqualTo: user.uid)
+                .snapshots();
+
+            // Stream real-time untuk pengeluaran
+            var pengeluaranStream = FirebaseFirestore.instance
+                .collection('pengeluaran')
+                .where('akun', isEqualTo: namaAkun)
+                .where('user_id', isEqualTo: user.uid)
+                .snapshots();
+
+            // Mendengarkan stream pendapatan dan pengeluaran secara paralel
+            var pendapatanSnapshot = await pendapatanStream.first;
+            var pengeluaranSnapshot = await pengeluaranStream.first;
+
+            // Hitung total pendapatan
+            int totalPendapatan = pendapatanSnapshot.docs.fold(0, (total, doc) {
+              return total + (int.tryParse(doc['nominal']) ?? 0);
             });
 
-            totalSaldo += saldoAwal;
+            // Hitung total pengeluaran
+            int totalPengeluaran =
+                pengeluaranSnapshot.docs.fold(0, (total, doc) {
+              return total + (int.tryParse(doc['nominal']) ?? 0);
+            });
+
+            // Hitung saldo akhir
+            int saldoAkhir = saldoAwal + totalPendapatan - totalPengeluaran;
+
+            // Cek apakah akun sudah ada di list
+            var existingAccountIndex = accounts.indexWhere(
+                (account) => account['nama_akun'] == accountData['nama_akun']);
+            if (existingAccountIndex != -1) {
+              accounts[existingAccountIndex] = {
+                'nama_akun': accountData['nama_akun'],
+                'saldo_awal': saldoAwal,
+                'icon': accountData['icon'] ?? '',
+                'total_pendapatan': totalPendapatan,
+                'total_pengeluaran': totalPengeluaran,
+                'saldo_akhir': saldoAkhir,
+              };
+            } else {
+              accounts.add({
+                'nama_akun': accountData['nama_akun'],
+                'saldo_awal': saldoAwal,
+                'icon': accountData['icon'] ?? '',
+                'total_pendapatan': totalPendapatan,
+                'total_pengeluaran': totalPengeluaran,
+                'saldo_akhir': saldoAkhir,
+              });
+            }
+
+            // Menambahkan saldo akhir ke total saldo
+            totalSaldo += saldoAkhir;
           }
 
+          // Mengupdate nilai total saldo setelah looping selesai
           saldo.value = totalSaldo;
         });
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load accounts');
+      Get.snackbar('Error', 'Failed to load accounts: ${e.toString()}');
     }
   }
 
@@ -110,11 +196,14 @@ class DashboardController extends GetxController {
             // Debugging: Cetak data yang diambil
             print('Credit card data: $ccData');
 
+            // Fetch pengeluaran untuk kartu ini
+            String cardName = ccData['namaKartu'] ?? 'No Name';
+            fetchPengeluaran(cardName);
+
             creditCards.add({
-              'namaKartu': ccData['namaKartu'] ?? 'No Name',
-              'ikonKartu':
-                  ccData['ikonKartu'] ?? '', // Jika tidak ada ikon, kosong
-              'limitKredit': ccData['limitKredit'] ?? '',
+              'namaKartu': cardName,
+              'ikonKartu': ccData['ikonKartu'] ?? '',
+              'limitKredit': ccData['limitKredit'] ?? '0',
             });
           }
         });
@@ -124,33 +213,35 @@ class DashboardController extends GetxController {
     }
   }
 
-  // void saveDataToFirebase(double nominal, int selectedTab) {
-  //   // Tentukan koleksi berdasarkan tab yang dipilih
-  //   String collection;
-  //   switch (selectedTab) {
-  //     case 0:
-  //       collection = 'pengeluaran';
-  //       break;
-  //     case 1:
-  //       collection = 'pendapatan';
-  //       break;
-  //     case 2:
-  //       collection = 'transfer';
-  //       break;
-  //     default:
-  //       collection = 'pengeluaran'; // Default ke pengeluaran
-  //   }
+  // Fungsi untuk mengambil kartu kredit dari Firestore
 
-  //   // Simpan data ke Firebase
-  //   FirebaseFirestore.instance.collection(collection).add({
-  //     'nominal': nominal,
-  //     'timestamp': FieldValue.serverTimestamp(),
-  //   }).then((value) {
-  //     Get.snackbar('Success', 'Data berhasil disimpan ke $collection');
-  //   }).catchError((error) {
-  //     Get.snackbar('Error', 'Gagal menyimpan data');
-  //   });
-  // }
+  // Fungsi untuk mengambil pengeluaran berdasarkan nama kartu kredit
+  void fetchPengeluaran(String namaKartu) async {
+    try {
+      var pengeluaranSnapshot = await FirebaseFirestore.instance
+          .collection('pengeluaran')
+          .where('akun', isEqualTo: namaKartu)
+          .get();
+
+      double totalPengeluaran = pengeluaranSnapshot.docs.fold(
+        0.0,
+        (total, doc) => total + double.tryParse(doc['nominal'] ?? '0')!,
+      );
+
+      // Simpan total pengeluaran untuk kartu ini di dalam map pengeluaranPerCard
+      pengeluaranPerCard[namaKartu] = totalPengeluaran;
+
+      // Update UI setelah data pengeluaran diambil
+      update();
+    } catch (e) {
+      print("Error fetching pengeluaran for $namaKartu: $e");
+    }
+  }
+
+  // Fungsi untuk mendapatkan total pengeluaran dari nama kartu
+  double getPengeluaran(String namaKartu) {
+    return pengeluaranPerCard[namaKartu] ?? 0.0;
+  }
 
   // Function to save form data to Firestore
   Future<void> saveFormData(String nominal) async {
@@ -163,9 +254,9 @@ class DashboardController extends GetxController {
       case 1:
         collection = 'pendapatan';
         break;
-      case 2:
-        collection = 'transfer';
-        break;
+      // case 2:
+      //   collection = 'transfer';
+      //   break;
       default:
         collection = 'pengeluaran';
     }

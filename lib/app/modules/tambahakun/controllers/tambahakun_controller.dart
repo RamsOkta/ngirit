@@ -14,18 +14,49 @@ class TambahakunController extends GetxController {
 
   // List of available icons (Bank and Wallet icons from assets)
   List<String> icons = [
-    'assets/icons/bca.webp', // Bank BCA
-    'assets/icons/mandiri.svg', // Bank Mandiri
-    'assets/icons/bni.jpg', // Bank BNI
+    'assets/icons/bca.png', // Bank BCA
+    'assets/icons/mandiri.png', // Bank Mandiri
+    'assets/icons/bni.png', // Bank BNI
     'assets/icons/bri.png', // Bank BRI
+    'assets/icons/cimb.png', // Bank CIMB Niaga
+    'assets/icons/danamon.png', // Bank Danamon
+    'assets/icons/permata.png', // Bank Permata
+    'assets/icons/sinarmas.png', // Bank Sinarmas
+    'assets/icons/mega.png', // Bank Mega
+    'assets/icons/maybank.png', // Bank Maybank Indonesia
+    'assets/icons/panin.png', // Panin Bank
+    'assets/icons/ocbc.png', // Bank OCBC NISP
+    'assets/icons/bukopin.png', // Bank Bukopin
+    'assets/icons/hsbc.png', // HSBC Indonesia
+    'assets/icons/standard_chartered.png', // Standard Chartered Bank Indonesia
+    'assets/icons/citibank.png', // Citibank Indonesia
+    'assets/icons/jenius.png', // Jenius (Bank BTPN)
+    'assets/icons/jago.png', // Bank Jago
+    'assets/icons/bsi.png', // Bank Syariah Indonesia
+    'assets/icons/muamalat.png', // Bank Muamalat
   ];
 
-  // Daftar label untuk ikon bank
   List<String> iconLabels = [
     'Bank BCA',
     'Bank Mandiri',
     'Bank BNI',
     'Bank BRI',
+    'Bank CIMB Niaga',
+    'Bank Danamon',
+    'Bank Permata',
+    'Bank Sinarmas',
+    'Bank Mega',
+    'Bank Maybank Indonesia',
+    'Panin Bank',
+    'Bank OCBC NISP',
+    'Bank Bukopin',
+    'HSBC Indonesia',
+    'Standard Chartered Bank Indonesia',
+    'Citibank Indonesia',
+    'Jenius',
+    'Bank Jago',
+    'Bank Syariah Indonesia',
+    'Bank Muamalat',
     // Tambahkan label bank lainnya di sini
   ];
 

@@ -178,10 +178,20 @@ class StatisticController extends GetxController {
         .listen((snapshot) {
       // Map untuk menyimpan total pengeluaran per kategori
       Map<String, double> categoryTotals = {
-        'Makanan': 0.0,
+        'Makan': 0.0,
         'Transportasi': 0.0,
         'Belanja': 0.0,
         'Hiburan': 0.0,
+        'Pendidikan': 0.0,
+        'Rumah Tangga': 0.0,
+        'Investasi': 0.0,
+        'Kesehatan': 0.0,
+        'Liburan': 0.0,
+        'Perbaikan Rumah': 0.0,
+        'Pakaian': 0.0,
+        'Internet': 0.0,
+        'Olahraga & Gym': 0.0,
+        'Lainnya': 0.0,
       };
 
       // Loop melalui dokumen snapshot
@@ -207,8 +217,8 @@ class StatisticController extends GetxController {
     pieChartData.value = [
       PieChartSectionData(
         color: Colors.green,
-        value: categoryTotals['Makanan'] ?? 0.0,
-        title: '${categoryTotals['Makanan']?.toStringAsFixed(1) ?? '0'}%',
+        value: categoryTotals['Makan'] ?? 0.0,
+        title: '${categoryTotals['Makan']?.toStringAsFixed(1) ?? '0'}%',
         radius: 50,
       ),
       PieChartSectionData(
@@ -227,6 +237,68 @@ class StatisticController extends GetxController {
         color: Colors.blue,
         value: categoryTotals['Hiburan'] ?? 0.0,
         title: '${categoryTotals['Hiburan']?.toStringAsFixed(1) ?? '0'}%',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.purple,
+        value: categoryTotals['Pendidikan'] ?? 0.0,
+        title: '${categoryTotals['Pendidikan']?.toStringAsFixed(1) ?? '0'}%',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.yellow,
+        value: categoryTotals['Rumah Tangga'] ?? 0.0,
+        title: '${categoryTotals['Rumah Tangga']?.toStringAsFixed(1) ?? '0'}%',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.brown,
+        value: categoryTotals['Investasi'] ?? 0.0,
+        title: '${categoryTotals['Investasi']?.toStringAsFixed(1) ?? '0'}%',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.teal,
+        value: categoryTotals['Kesehatan'] ?? 0.0,
+        title: '${categoryTotals['Kesehatan']?.toStringAsFixed(1) ?? '0'}%',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.cyan,
+        value: categoryTotals['Liburan'] ?? 0.0,
+        title: '${categoryTotals['Liburan']?.toStringAsFixed(1) ?? '0'}%',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.pink,
+        value: categoryTotals['Perbaikan Rumah'] ?? 0.0,
+        title:
+            '${categoryTotals['Perbaikan Rumah']?.toStringAsFixed(1) ?? '0'}%',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.lime,
+        value: categoryTotals['Pakaian'] ?? 0.0,
+        title: '${categoryTotals['Pakaian']?.toStringAsFixed(1) ?? '0'}%',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.indigo,
+        value: categoryTotals['Internet'] ?? 0.0,
+        title: '${categoryTotals['Internet']?.toStringAsFixed(1) ?? '0'}%',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.grey,
+        value: categoryTotals['Olahraga & Gym'] ?? 0.0,
+        title:
+            '${categoryTotals['Olahraga & Gym']?.toStringAsFixed(1) ?? '0'}%',
+        radius: 50,
+      ),
+      PieChartSectionData(
+        color: Colors.black,
+        value: categoryTotals['Lainnya'] ?? 0.0,
+        title: '${categoryTotals['Lainnya']?.toStringAsFixed(1) ?? '0'}%',
         radius: 50,
       ),
     ];

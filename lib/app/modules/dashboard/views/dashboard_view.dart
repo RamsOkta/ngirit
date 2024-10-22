@@ -32,13 +32,23 @@ class DashboardView extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.person, color: Colors.white),
-                        onPressed: () {
-                          Get.toNamed(
-                              '/profile'); // Navigasi ke halaman profile
-                        },
-                      ),
+                      Obx(() {
+                        return IconButton(
+                          icon: controller.profileImageUrl.value.isNotEmpty
+                              ? CircleAvatar(
+                                  backgroundImage: controller
+                                          .profileImageUrl.value.isNotEmpty
+                                      ? NetworkImage(
+                                          controller.profileImageUrl.value)
+                                      : null,
+                                )
+                              : Icon(Icons.person, color: Colors.white),
+                          onPressed: () {
+                            Get.toNamed(
+                                '/profile'); // Navigasi ke halaman profile
+                          },
+                        );
+                      }),
                       Expanded(
                         child: Center(
                           child: Obx(() {
@@ -48,6 +58,7 @@ class DashboardView extends StatelessWidget {
                                 color: Colors.white,
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
+                                fontFamily: 'OpenSans',
                               ),
                               textAlign: TextAlign.center,
                             );
@@ -95,16 +106,30 @@ class DashboardView extends StatelessWidget {
                             ListTile(
                               title: Text(
                                 'Saldo Anda',
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontFamily: 'OpenSans',
+                                ),
                               ),
-                              trailing: Obx(() {
-                                return IconButton(
-                                  icon: Icon(controller.isSaldoVisible.value
-                                      ? Icons.visibility
-                                      : Icons.visibility_off),
-                                  onPressed: controller.toggleSaldoVisibility,
-                                );
-                              }),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Obx(() {
+                                    return IconButton(
+                                      icon: Icon(controller.isSaldoVisible.value
+                                          ? Icons.visibility
+                                          : Icons.visibility_off),
+                                      onPressed:
+                                          controller.toggleSaldoVisibility,
+                                    );
+                                  }),
+                                  IconButton(
+                                    icon: Icon(Icons.refresh),
+                                    onPressed: controller
+                                        .listenToAccountUpdates, // Tombol refresh
+                                  ),
+                                ],
+                              ),
                             ),
                             Padding(
                               padding: const EdgeInsets.all(16.0),
@@ -114,10 +139,10 @@ class DashboardView extends StatelessWidget {
                                       ? 'Rp. ${controller.saldo.value}'
                                       : '******',
                                   style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                      color: Colors.black,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: "OpenSans"),
                                 );
                               }),
                             ),
@@ -129,7 +154,7 @@ class DashboardView extends StatelessWidget {
                                       account['nama_akun']?.toString() ??
                                           'Unknown'; // Nama akun
                                   String amountString =
-                                      account['saldo_awal']?.toString() ??
+                                      account['saldo_akhir']?.toString() ??
                                           '0'; // Saldo akun
                                   Color amountColor;
 
@@ -221,13 +246,17 @@ class DashboardView extends StatelessWidget {
                                     String cardName =
                                         card['namaKartu'] ?? 'Unknown';
                                     String cardIcon = card['ikonKartu'] ??
-                                        'assets/default_icon.png'; // ikonKartu dari Firebase atau lokal
-                                    String limitKredit =
-                                        card['limitKredit'] ?? '0';
+                                        'assets/default_icon.png';
+                                    double limitKredit = double.tryParse(
+                                            card['limitKredit'] ?? '0') ??
+                                        0;
+                                    double fakturSaatIni =
+                                        controller.getPengeluaran(cardName);
 
-                                    // Memeriksa apakah ikon berasal dari path lokal atau URL Firebase
-                                    bool isLocalAsset =
-                                        cardIcon.startsWith("assets/");
+                                    // Hitung progress (faktur saat ini / limit kredit)
+                                    double progress = limitKredit > 0
+                                        ? fakturSaatIni / limitKredit
+                                        : 0;
 
                                     return Column(
                                       children: [
@@ -237,35 +266,18 @@ class DashboardView extends StatelessWidget {
                                             CircleAvatar(
                                               backgroundColor: Colors.white,
                                               radius: 30,
-                                              child: isLocalAsset
-                                                  ? Image.asset(
-                                                      cardIcon,
-                                                      width: 30,
-                                                      height: 30,
-                                                      errorBuilder: (context,
-                                                          error, stackTrace) {
-                                                        // Jika ada error, tampilkan ikon default
-                                                        return Image.asset(
-                                                          'assets/icons/default_icon.png',
+                                              child:
+                                                  cardIcon.startsWith("assets/")
+                                                      ? Image.asset(
+                                                          cardIcon,
                                                           width: 30,
                                                           height: 30,
-                                                        );
-                                                      },
-                                                    )
-                                                  : Image.network(
-                                                      cardIcon,
-                                                      width: 30,
-                                                      height: 30,
-                                                      errorBuilder: (context,
-                                                          error, stackTrace) {
-                                                        // Jika URL tidak valid, tampilkan ikon default
-                                                        return Image.asset(
-                                                          'assets/icons/default_icon.png',
+                                                        )
+                                                      : Image.network(
+                                                          cardIcon,
                                                           width: 30,
                                                           height: 30,
-                                                        );
-                                                      },
-                                                    ),
+                                                        ),
                                             ),
                                             SizedBox(width: 16),
                                             Column(
@@ -280,12 +292,33 @@ class DashboardView extends StatelessWidget {
                                                     fontSize: 16,
                                                   ),
                                                 ),
+                                                // Progress bar
+                                                SizedBox(height: 8),
+                                                Container(
+                                                  width: 200,
+                                                  child:
+                                                      LinearProgressIndicator(
+                                                    value: progress.isFinite
+                                                        ? progress
+                                                        : 0,
+                                                    backgroundColor: Colors
+                                                        .white
+                                                        .withOpacity(0.3),
+                                                    // Warna berubah dari hijau ke merah secara bertahap
+                                                    color: Color.lerp(
+                                                        Colors.green,
+                                                        Colors.red,
+                                                        progress),
+                                                    minHeight: 8,
+                                                  ),
+                                                ),
+
+                                                SizedBox(height: 8),
                                               ],
                                             ),
                                           ],
                                         ),
                                         SizedBox(height: 16),
-
                                         // Informasi limit kredit
                                         Container(
                                           decoration: BoxDecoration(
@@ -310,9 +343,14 @@ class DashboardView extends StatelessWidget {
                                                   ),
                                                   SizedBox(height: 8),
                                                   Text(
-                                                    'Rp $limitKredit',
+                                                    'Rp ${(limitKredit - fakturSaatIni).toStringAsFixed(0)}',
                                                     style: TextStyle(
-                                                      color: Colors.green,
+                                                      color: (limitKredit -
+                                                                  fakturSaatIni) <
+                                                              0
+                                                          ? Colors.red
+                                                          : Colors
+                                                              .green, // Mengubah warna jika hasil negatif
                                                       fontWeight:
                                                           FontWeight.bold,
                                                       fontSize: 16,
@@ -331,7 +369,7 @@ class DashboardView extends StatelessWidget {
                                                   ),
                                                   SizedBox(height: 8),
                                                   Text(
-                                                    '-Rp 5.000,00',
+                                                    '-Rp ${fakturSaatIni.toStringAsFixed(0)}',
                                                     style: TextStyle(
                                                       color: Colors.red,
                                                       fontWeight:
@@ -359,7 +397,7 @@ class DashboardView extends StatelessWidget {
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,
-                                    side: BorderSide(color: Colors.green),
+                                    side: BorderSide(color: Colors.black),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -368,14 +406,14 @@ class DashboardView extends StatelessWidget {
                                   ),
                                   child: Text(
                                     'Kelola Kartu',
-                                    style: TextStyle(color: Colors.green),
+                                    style: TextStyle(color: Colors.black),
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ),
+                      )
                     ],
                   ),
                 ),
@@ -466,10 +504,10 @@ class DashboardView extends StatelessWidget {
                       backgroundColor =
                           Colors.green; // Warna hijau untuk Pendapatan
                       break;
-                    case 2:
-                      backgroundColor =
-                          Colors.blue; // Warna biru untuk Transfer
-                      break;
+                    // case 2:
+                    //   backgroundColor =
+                    //       Colors.blue; // Warna biru untuk Transfer
+                    //   break;
                     default:
                       backgroundColor = Colors.red;
                   }
@@ -486,7 +524,7 @@ class DashboardView extends StatelessWidget {
                           children: [
                             _buildTabItem('Pengeluaran', Colors.red, 0),
                             _buildTabItem('Pendapatan', Colors.green, 1),
-                            _buildTabItem('Transfer', Colors.blue, 2),
+                            // _buildTabItem('Transfer', Colors.blue, 2),
                           ],
                         ),
                         // Input angka "0,00" di dalam background color
@@ -549,8 +587,8 @@ class DashboardView extends StatelessWidget {
                               return _buildPengeluaranForm(context);
                             case 1:
                               return _buildPendapatanForm(context);
-                            case 2:
-                              return _buildTransferForm();
+                            // case 2:
+                            //   return _buildTransferForm();
                             default:
                               return _buildPengeluaranForm(context);
                           }
@@ -735,10 +773,6 @@ class DashboardView extends StatelessWidget {
                             ? controller.selectedAkun.value
                             : 'Pilih Akun', // Placeholder
                       ),
-                    ),
-                    Divider(
-                      thickness: 1, // Tebal garis bawah
-                      color: Colors.grey, // Warna garis bawah
                     ),
                   ],
                 ),
@@ -953,16 +987,16 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildTransferForm() {
-    return Column(
-      children: [
-        _buildTextField('Deskripsi', Icons.edit),
-        _buildTextField('Kategori', Icons.list),
-        _buildTextField('Dibayar dengan', Icons.wallet_giftcard),
-        _buildTextField('Tanggal', Icons.calendar_today),
-      ],
-    );
-  }
+  // Widget _buildTransferForm() {
+  //   return Column(
+  //     children: [
+  //       _buildTextField('Deskripsi', Icons.edit),
+  //       _buildTextField('Kategori', Icons.list),
+  //       _buildTextField('Dibayar dengan', Icons.wallet_giftcard),
+  //       _buildTextField('Tanggal', Icons.calendar_today),
+  //     ],
+  //   );
+  // }
 
 // Fungsi untuk membuat text field di dalam bottom sheet
 
@@ -1033,7 +1067,6 @@ class DashboardView extends StatelessWidget {
   void _showAkunBottomSheet(BuildContext context) {
     final List<Map<String, dynamic>> akunList = [
       {'nama_akun': 'BNI', 'icon': 'assets/icons/bni.jpg'},
-
       // Akun lainnya...
     ];
 
@@ -1047,32 +1080,41 @@ class DashboardView extends StatelessWidget {
           padding: EdgeInsets.all(16.0),
           height: 300,
           child: Obx(() {
-            if (controller.accounts.isEmpty) {
+            if (controller.accounts.isEmpty && controller.creditCards.isEmpty) {
               return Center(
-                child: Text('Tidak ada akun tersedia'),
+                child: Text('Tidak ada akun atau kartu tersedia'),
               );
             } else {
               return ListView.builder(
-                itemCount: controller.accounts.length,
+                itemCount:
+                    controller.accounts.length + controller.creditCards.length,
                 itemBuilder: (context, index) {
-                  var akun = controller.accounts[index];
-
-                  return ListTile(
-                    leading: Icon(
-                        Icons.account_balance_wallet), // Ikon bisa disesuaikan
-
-                    title: Text(akun['nama_akun']),
-
-                    subtitle: Text('Saldo: ${akun['saldo_awal']}'),
-
-                    onTap: () {
-                      // Update selected akun
-
-                      controller.selectedAkun.value = akun['nama_akun'];
-
-                      Navigator.pop(context); // Tutup bottom sheet
-                    },
-                  );
+                  Map<String, dynamic> item;
+                  if (index < controller.accounts.length) {
+                    item = controller.accounts[index];
+                    return ListTile(
+                      leading: Icon(Icons.account_balance_wallet),
+                      title: Text(item['nama_akun']),
+                      subtitle: Text('Saldo: ${item['saldo_awal']}'),
+                      onTap: () {
+                        controller.selectedAkun.value = item['nama_akun'];
+                        Navigator.pop(context);
+                      },
+                    );
+                  } else {
+                    // Menampilkan data kartu kredit
+                    item = controller
+                        .creditCards[index - controller.accounts.length];
+                    return ListTile(
+                      leading: Icon(Icons.credit_card),
+                      title: Text(item['namaKartu']),
+                      subtitle: Text('Limit: ${item['limitKredit']}'),
+                      onTap: () {
+                        controller.selectedAkun.value = item['namaKartu'];
+                        Navigator.pop(context);
+                      },
+                    );
+                  }
                 },
               );
             }
@@ -1086,10 +1128,20 @@ class DashboardView extends StatelessWidget {
 
   void _showKategoriBottomSheet(BuildContext context) {
     final List<Map<String, dynamic>> kategoriList = [
-      {'labels': 'Makanan', 'icon': 'assets/icons/food.png'},
+      {'labels': 'Makan', 'icon': 'assets/icons/food.png'},
       {'labels': 'Transportasi', 'icon': 'assets/icons/car.png'},
       {'labels': 'Belanja', 'icon': 'assets/icons/shop.png'},
       {'labels': 'Hiburan', 'icon': 'assets/icons/cinema.png'},
+      {'labels': 'Pendidikan', 'icon': 'assets/icons/pendidikan.png'},
+      {'labels': 'Rumah Tangga', 'icon': 'assets/icons/rt.png'},
+      {'labels': 'Investasi', 'icon': 'assets/icons/investasi.png'},
+      {'labels': 'Kesehatan', 'icon': 'assets/icons/kesehatan.png'},
+      {'labels': 'Liburan', 'icon': 'assets/icons/liburan.png'},
+      {'labels': 'Perbaikan Rumah', 'icon': 'assets/icons/rumah.png'},
+      {'labels': 'Pakaian', 'icon': 'assets/icons/outfit.png'},
+      {'labels': 'Internet', 'icon': 'assets/icons/internet.png'},
+      {'labels': 'Olahraga & Gym', 'icon': 'assets/icons/gym.png'},
+      {'labels': 'Lainnya', 'icon': 'assets/icons/lainnya.png'},
     ];
 
     showModalBottomSheet(
@@ -1100,7 +1152,8 @@ class DashboardView extends StatelessWidget {
       builder: (BuildContext context) {
         return Container(
           padding: EdgeInsets.all(16.0),
-          height: 250,
+          height:
+              MediaQuery.of(context).size.height * 0.6, // 60% of screen height
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1109,36 +1162,62 @@ class DashboardView extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: kategoriList.map((kategori) {
-                  return GestureDetector(
-                    onTap: () {
-                      // Simpan kategori yang dipilih di controller
-                      controller.selectedKategori.value = kategori['labels'];
-                      Navigator.pop(context); // Tutup bottom sheet
-                    },
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 30, // Ukuran icon
-                          backgroundColor: Colors.grey[200],
-                          child: Image.asset(
-                            kategori['icon'], // Menampilkan gambar dari assets
-                            width: 28, // Ukuran gambar
-                            height: 28,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          kategori['labels'], // Menggunakan 'labels' yang benar
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ],
+              Expanded(
+                child: SingleChildScrollView(
+                  child: GridView.builder(
+                    shrinkWrap:
+                        true, // Prevents GridView from expanding infinitely
+                    physics:
+                        NeverScrollableScrollPhysics(), // Disable GridView scrolling
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4, // Number of columns in grid
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio:
+                          0.7, // Adjusted for better space for text
                     ),
-                  );
-                }).toList(),
+                    itemCount: kategoriList.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final kategori = kategoriList[index];
+                      return GestureDetector(
+                        onTap: () {
+                          // Simpan kategori yang dipilih di controller
+                          controller.selectedKategori.value =
+                              kategori['labels'];
+                          Navigator.pop(context); // Tutup bottom sheet
+                        },
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 30, // Ukuran icon
+                              backgroundColor: Colors.grey[200],
+                              child: Image.asset(
+                                kategori[
+                                    'icon'], // Menampilkan gambar dari assets
+                                width: 28, // Ukuran gambar
+                                height: 28,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Container(
+                              width: 70, // Batasan lebar teks
+                              child: Text(
+                                kategori[
+                                    'labels'], // Menggunakan 'labels' yang benar
+                                style: TextStyle(fontSize: 12),
+                                textAlign: TextAlign.center, // Rata tengah
+                                softWrap: true, // Mengizinkan pembungkusan teks
+                                overflow:
+                                    TextOverflow.visible, // Tidak overflow
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ],
           ),
@@ -1150,10 +1229,11 @@ class DashboardView extends StatelessWidget {
   // Fungsi buttomsheet kategori penghasilan
   void _showKategoriPendapatanBottomSheet(BuildContext context) {
     final List<Map<String, dynamic>> kategoriPendapatanList = [
-      {'label': 'Gaji', 'icon': 'assets/icons/salary.png'},
-      {'label': 'Investasi', 'icon': 'assets/icons/investment.png'},
-      {'label': 'Hadiah', 'icon': 'assets/icons/gift.png'},
-      {'label': 'Bonus', 'icon': 'assets/icons/bonus.png'},
+      {'label': 'Gaji', 'icon': 'assets/icons/gaji.png'},
+      {'label': 'Investasi', 'icon': 'assets/icons/investasi.png'},
+      {'label': 'Bonus', 'icon': 'assets/icons/hadiah.png'},
+      {'label': 'Uang Saku', 'icon': 'assets/icons/uangsaku.png'},
+      {'label': 'Lainnya', 'icon': 'assets/icons/lainnya.png'},
     ];
 
     showModalBottomSheet(
@@ -1164,45 +1244,71 @@ class DashboardView extends StatelessWidget {
       builder: (BuildContext context) {
         return Container(
           padding: EdgeInsets.all(16.0),
-          height: 250,
+          height:
+              MediaQuery.of(context).size.height * 0.6, // 60% of screen height
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Pilih Kategori Pendapatan',
+                'Pilih Kategori',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: kategoriPendapatanList.map((kategori) {
-                  return GestureDetector(
-                    onTap: () {
-                      // Simpan kategori yang dipilih di controller
-                      controller.selectedKategori.value = kategori['label'];
-                      Navigator.pop(context); // Tutup bottom sheet
-                    },
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 30, // Ukuran icon
-                          backgroundColor: Colors.grey[200],
-                          child: Image.asset(
-                            kategori['icon'], // Menampilkan gambar dari assets
-                            width: 28, // Ukuran gambar
-                            height: 28,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          kategori['label'], // Menggunakan 'labels' yang benar
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ],
+              Expanded(
+                child: SingleChildScrollView(
+                  child: GridView.builder(
+                    shrinkWrap:
+                        true, // Prevents GridView from expanding infinitely
+                    physics:
+                        NeverScrollableScrollPhysics(), // Disable GridView scrolling
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4, // Number of columns in grid
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio:
+                          0.7, // Adjusted for better space for text
                     ),
-                  );
-                }).toList(),
+                    itemCount: kategoriPendapatanList.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final kategori = kategoriPendapatanList[index];
+                      return GestureDetector(
+                        onTap: () {
+                          // Simpan kategori yang dipilih di controller
+                          controller.selectedKategori.value = kategori['label'];
+                          Navigator.pop(context); // Tutup bottom sheet
+                        },
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 30, // Ukuran icon
+                              backgroundColor: Colors.grey[200],
+                              child: Image.asset(
+                                kategori[
+                                    'icon'], // Menampilkan gambar dari assets
+                                width: 28, // Ukuran gambar
+                                height: 28,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Container(
+                              width: 70, // Batasan lebar teks
+                              child: Text(
+                                kategori[
+                                    'label'], // Menggunakan 'labels' yang benar
+                                style: TextStyle(fontSize: 12),
+                                textAlign: TextAlign.center, // Rata tengah
+                                softWrap: true, // Mengizinkan pembungkusan teks
+                                overflow:
+                                    TextOverflow.visible, // Tidak overflow
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ],
           ),

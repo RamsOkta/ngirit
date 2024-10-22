@@ -131,7 +131,7 @@ class TambahakunView extends StatelessWidget {
                                                   border: OutlineInputBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                            15),
+                                                            5),
                                                   ),
                                                   filled: true,
                                                   fillColor: Colors.grey[200],

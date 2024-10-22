@@ -14,16 +14,36 @@ class TambahccController extends GetxController {
   var filteredIcons = <String>[].obs;
 
   List<String> icons = [
-    'assets/icons/paypal.webp', // Bank BCA
-    'assets/icons/paypal.webp', // Bank Mandiri
-    'assets/icons/paypal.webp', // Bank BNI
-    'assets/icons/paypal.webp', // Bank BRI
+    'assets/icons/bca.png', // BCA
+    'assets/icons/mandiri.png', // Mandiri
+    'assets/icons/bni.png', // BNI
+    'assets/icons/bri.png', // BRI
+    'assets/icons/cimb.png', // CIMB Niaga
+    'assets/icons/hsbc.png', // HSBC
+
+    'assets/icons/ocbc.png', // OCBC NISP
+
+    'assets/icons/maybank.png', // Maybank
+    'assets/icons/panin.png', // Panin Bank
+    'assets/icons/danamon.png', // Danamon
+    'assets/icons/mega.png', // Bank Mega
+    'assets/icons/permata.png', // Permata Bank
+    'assets/icons/paypal.webp', // UOB
   ];
 
   List<String> iconLabels = [
-    'Paypal',
-    'Paypal',
-    'Paypal',
+    'BCA',
+    'Mandiri',
+    'BNI',
+    'BRI',
+    'CIMB Niaga',
+    'HSBC',
+    'OCBC NISP',
+    'Maybank',
+    'Panin Bank',
+    'Danamon',
+    'Bank Mega',
+    'Permata Bank',
     'Paypal',
   ];
 

@@ -30,14 +30,45 @@ flutter:
   uses-material-design: true
   assets:
      - assets/icons/
-     - assets/images/logo.png
-     - assets/images/ngirit.png
-     - assets/images/login.png
+     - assets/icons/alat.png
+     - assets/icons/anz.png
+     - assets/icons/bsi.png
+     - assets/icons/bca.png
      - assets/icons/bca.webp
+     - assets/icons/bi.png
+     - assets/icons/bjb.png
      - assets/icons/bni.jpg
+     - assets/icons/bni.png
      - assets/icons/bri.png
+     - assets/icons/btn.png
+     - assets/icons/bukopin.png
+     - assets/icons/car.png
+     - assets/icons/cars.png
+     - assets/icons/cimb.png
+     - assets/icons/cinema.png
+     - assets/icons/citi.png
+     - assets/icons/danamon.png
+     - assets/icons/digibank.png
+     - assets/icons/food.png
+     - assets/icons/hiburan.png
+     - assets/icons/hiburan2.png
+     - assets/icons/hsbc.png
+     - assets/icons/icons8-no-96.png
+     - assets/icons/jago.png
+     - assets/icons/jenius.png
+     - assets/icons/makanan.png
+     - assets/icons/mandiri.png
      - assets/icons/mandiri.svg
+     - assets/icons/maybank.png
+     - assets/icons/mega.png
+     - assets/icons/ocbc.png
+     - assets/icons/panin.png
      - assets/icons/paypal.webp
+     - assets/icons/permata.png
+     - assets/icons/shop.png
+     - assets/icons/shop2.png
+     - assets/icons/standard chartered.png
+     - assets/icons/uob.png
      - assets/images/onboarding_image1.png
      - assets/images/onboarding_image2.png
      - assets/images/onboarding_image.png
@@ -46,8 +77,41 @@ flutter:
      - assets/icons/cinema.png
      - assets/icons/shop.png
      - assets/icons/food.png
+     - assets/icons/car.png
+     - assets/icons/food.png
+     - assets/icons/cars.png
+     - assets/icons/hiburan2.png
+     - assets/icons/shop2.png
+     - assets/icons/icons8-no-96.png
+     - assets/icons/makanan.png
+     - assets/icons/alat.png
+     - assets/icons/uangsaku.png
+     - assets/icons/lainnya.png
+     - assets/icons/investasi.png
+     - assets/icons/gaji.png
+     - assets/icons/hadiah.png
+     - assets/icons/internet.png
+     - assets/icons/outfit.png
+     - assets/icons/rumah.png
+     - assets/icons/kesehatan.png
+     - assets/icons/pendidikan.png
+     - assets/icons/gym.png
+     - assets/icons/internet.png
+     - assets/icons/rt.png
+    
   fonts:
     - family: Lilita One
       fonts:
         - asset: assets/fonts/LilitaOne-Regular.ttf
         # - asset: assets/fonts/OpenSans-Italic-VariableFont_wdthwght.ttf
+
+    - family: Open Sans
+      fonts:
+        - asset: assets/fonts/OpenSans-Regular.ttf
+        - asset: assets/fonts/OpenSans-Bold.ttf
+        - asset: assets/fonts/OpenSans-Italic.ttf
+        - asset: assets/fonts/OpenSans-Light.ttf
+        - asset: assets/fonts/OpenSans-SemiBold.ttf
+        - asset: assets/fonts/OpenSans-ExtraBold.ttf
+        - asset: assets/fonts/OpenSans-ExtraBoldItalic.ttf
+        - asset: assets/fonts/OpenSans-Italic-VariableFont_wdth,wght.ttf
