@@ -211,227 +211,227 @@ class DashboardView extends StatelessWidget {
                       ),
 
                       // Tambahkan kolom untuk Kartu Kredit dengan Gradien
-                      Container(
-                        margin: EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Color(0xFF35478C),
-                              Color(0xFFFFFFFF), // Gradient dari biru ke putih
-                            ],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Bagian "Kartu Saya"
-                              SizedBox(height: 8),
-                              Text(
-                                'Kartu Saya',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 16),
+                      // Container(
+                      //   margin: EdgeInsets.all(16),
+                      //   decoration: BoxDecoration(
+                      //     gradient: LinearGradient(
+                      //       colors: [
+                      //         Color(0xFF35478C),
+                      //         Color(0xFFFFFFFF), // Gradient dari biru ke putih
+                      //       ],
+                      //       begin: Alignment.topCenter,
+                      //       end: Alignment.bottomCenter,
+                      //     ),
+                      //     borderRadius: BorderRadius.circular(20),
+                      //   ),
+                      //   child: Padding(
+                      //     padding: const EdgeInsets.all(16.0),
+                      //     child: Column(
+                      //       crossAxisAlignment: CrossAxisAlignment.start,
+                      //       children: [
+                      //         // Bagian "Kartu Saya"
+                      //         SizedBox(height: 8),
+                      //         Text(
+                      //           'Kartu Saya',
+                      //           style: TextStyle(
+                      //             color: Colors.white,
+                      //             fontWeight: FontWeight.bold,
+                      //           ),
+                      //         ),
+                      //         SizedBox(height: 16),
 
-                              // Daftar kartu kredit yang diambil dari controller secara dinamis
-                              Obx(() {
-                                if (controller.creditCards.isEmpty) {
-                                  return Text(
-                                    'Belum ada kartu kredit terdaftar',
-                                    style: TextStyle(color: Colors.white),
-                                  );
-                                }
+                      //         // Daftar kartu kredit yang diambil dari controller secara dinamis
+                      //         Obx(() {
+                      //           if (controller.creditCards.isEmpty) {
+                      //             return Text(
+                      //               'Belum ada kartu kredit terdaftar',
+                      //               style: TextStyle(color: Colors.white),
+                      //             );
+                      //           }
 
-                                return Column(
-                                  children: controller.creditCards.map((card) {
-                                    String cardName =
-                                        card['namaKartu'] ?? 'Unknown';
-                                    String cardIcon = card['ikonKartu'] ??
-                                        'assets/default_icon.png';
-                                    double limitKredit = double.tryParse(
-                                            card['limitKredit'] ?? '0') ??
-                                        0;
-                                    double fakturSaatIni =
-                                        controller.getPengeluaran(cardName);
+                      //           return Column(
+                      //             children: controller.creditCards.map((card) {
+                      //               String cardName =
+                      //                   card['namaKartu'] ?? 'Unknown';
+                      //               String cardIcon = card['ikonKartu'] ??
+                      //                   'assets/default_icon.png';
+                      //               double limitKredit = double.tryParse(
+                      //                       card['limitKredit'] ?? '0') ??
+                      //                   0;
+                      //               double fakturSaatIni =
+                      //                   controller.getPengeluaran(cardName);
 
-                                    // Hitung progress (faktur saat ini / limit kredit)
-                                    double progress = limitKredit > 0
-                                        ? fakturSaatIni / limitKredit
-                                        : 0;
+                      //               // Hitung progress (faktur saat ini / limit kredit)
+                      //               double progress = limitKredit > 0
+                      //                   ? fakturSaatIni / limitKredit
+                      //                   : 0;
 
-                                    return Column(
-                                      children: [
-                                        Row(
-                                          children: [
-                                            // Icon kartu
-                                            CircleAvatar(
-                                              backgroundColor: Colors.white,
-                                              radius: 30,
-                                              child:
-                                                  cardIcon.startsWith("assets/")
-                                                      ? Image.asset(
-                                                          cardIcon,
-                                                          width: 30,
-                                                          height: 30,
-                                                        )
-                                                      : Image.network(
-                                                          cardIcon,
-                                                          width: 30,
-                                                          height: 30,
-                                                        ),
-                                            ),
-                                            SizedBox(width: 16),
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  cardName,
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
-                                                // Progress bar
-                                                SizedBox(height: 8),
-                                                Container(
-                                                  width: 200,
-                                                  child:
-                                                      LinearProgressIndicator(
-                                                    value: progress.isFinite
-                                                        ? progress
-                                                        : 0,
-                                                    backgroundColor: Colors
-                                                        .white
-                                                        .withOpacity(0.3),
-                                                    // Warna berubah dari hijau ke merah secara bertahap
-                                                    color: Color.lerp(
-                                                        Colors.green,
-                                                        Colors.red,
-                                                        progress),
-                                                    minHeight: 8,
-                                                  ),
-                                                ),
+                      //               return Column(
+                      //                 children: [
+                      //                   Row(
+                      //                     children: [
+                      //                       // Icon kartu
+                      //                       CircleAvatar(
+                      //                         backgroundColor: Colors.white,
+                      //                         radius: 30,
+                      //                         child:
+                      //                             cardIcon.startsWith("assets/")
+                      //                                 ? Image.asset(
+                      //                                     cardIcon,
+                      //                                     width: 30,
+                      //                                     height: 30,
+                      //                                   )
+                      //                                 : Image.network(
+                      //                                     cardIcon,
+                      //                                     width: 30,
+                      //                                     height: 30,
+                      //                                   ),
+                      //                       ),
+                      //                       SizedBox(width: 16),
+                      //                       Column(
+                      //                         crossAxisAlignment:
+                      //                             CrossAxisAlignment.start,
+                      //                         children: [
+                      //                           Text(
+                      //                             cardName,
+                      //                             style: TextStyle(
+                      //                               color: Colors.white,
+                      //                               fontWeight: FontWeight.bold,
+                      //                               fontSize: 16,
+                      //                             ),
+                      //                           ),
+                      //                           // Progress bar
+                      //                           SizedBox(height: 8),
+                      //                           Container(
+                      //                             width: 200,
+                      //                             child:
+                      //                                 LinearProgressIndicator(
+                      //                               value: progress.isFinite
+                      //                                   ? progress
+                      //                                   : 0,
+                      //                               backgroundColor: Colors
+                      //                                   .white
+                      //                                   .withOpacity(0.3),
+                      //                               // Warna berubah dari hijau ke merah secara bertahap
+                      //                               color: Color.lerp(
+                      //                                   Colors.green,
+                      //                                   Colors.red,
+                      //                                   progress),
+                      //                               minHeight: 8,
+                      //                             ),
+                      //                           ),
 
-                                                SizedBox(height: 8),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 16),
-                                        // Informasi limit kredit
-                                        Container(
-                                          decoration: BoxDecoration(
-                                            color: const Color.fromARGB(
-                                                255, 247, 245, 245),
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          padding: EdgeInsets.all(16),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    'Tersedia',
-                                                    style: TextStyle(
-                                                        color: Colors.grey),
-                                                  ),
-                                                  SizedBox(height: 8),
-                                                  Text(
-                                                    // Memformat nilai limitKredit - fakturSaatIni dengan NumberFormat
-                                                    '${NumberFormat.currency(
-                                                      locale: 'id',
-                                                      symbol: 'Rp',
-                                                      decimalDigits: 0,
-                                                    ).format(limitKredit - fakturSaatIni)}',
-                                                    style: TextStyle(
-                                                      color: (limitKredit -
-                                                                  fakturSaatIni) <
-                                                              0
-                                                          ? Colors.red
-                                                          : Colors
-                                                              .green, // Mengubah warna jika hasil negatif
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 16,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.end,
-                                                children: [
-                                                  Text(
-                                                    'Faktur Saat Ini',
-                                                    style: TextStyle(
-                                                        color: Colors.grey),
-                                                  ),
-                                                  SizedBox(height: 8),
-                                                  Text(
-                                                    // Memformat nilai faktur dengan NumberFormat
-                                                    '-${NumberFormat.currency(
-                                                      locale: 'id',
-                                                      symbol: 'Rp',
-                                                      decimalDigits: 0,
-                                                    ).format(fakturSaatIni)}',
-                                                    style: TextStyle(
-                                                      color: Colors.red,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 16,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        SizedBox(height: 16),
-                                      ],
-                                    );
-                                  }).toList(),
-                                );
-                              }),
+                      //                           SizedBox(height: 8),
+                      //                         ],
+                      //                       ),
+                      //                     ],
+                      //                   ),
+                      //                   SizedBox(height: 16),
+                      //                   // Informasi limit kredit
+                      //                   Container(
+                      //                     decoration: BoxDecoration(
+                      //                       color: const Color.fromARGB(
+                      //                           255, 247, 245, 245),
+                      //                       borderRadius:
+                      //                           BorderRadius.circular(12),
+                      //                     ),
+                      //                     padding: EdgeInsets.all(16),
+                      //                     child: Row(
+                      //                       mainAxisAlignment:
+                      //                           MainAxisAlignment.spaceBetween,
+                      //                       children: [
+                      //                         Column(
+                      //                           crossAxisAlignment:
+                      //                               CrossAxisAlignment.start,
+                      //                           children: [
+                      //                             Text(
+                      //                               'Tersedia',
+                      //                               style: TextStyle(
+                      //                                   color: Colors.grey),
+                      //                             ),
+                      //                             SizedBox(height: 8),
+                      //                             Text(
+                      //                               // Memformat nilai limitKredit - fakturSaatIni dengan NumberFormat
+                      //                               '${NumberFormat.currency(
+                      //                                 locale: 'id',
+                      //                                 symbol: 'Rp',
+                      //                                 decimalDigits: 0,
+                      //                               ).format(limitKredit - fakturSaatIni)}',
+                      //                               style: TextStyle(
+                      //                                 color: (limitKredit -
+                      //                                             fakturSaatIni) <
+                      //                                         0
+                      //                                     ? Colors.red
+                      //                                     : Colors
+                      //                                         .green, // Mengubah warna jika hasil negatif
+                      //                                 fontWeight:
+                      //                                     FontWeight.bold,
+                      //                                 fontSize: 16,
+                      //                               ),
+                      //                             ),
+                      //                           ],
+                      //                         ),
+                      //                         Column(
+                      //                           crossAxisAlignment:
+                      //                               CrossAxisAlignment.end,
+                      //                           children: [
+                      //                             Text(
+                      //                               'Faktur Saat Ini',
+                      //                               style: TextStyle(
+                      //                                   color: Colors.grey),
+                      //                             ),
+                      //                             SizedBox(height: 8),
+                      //                             Text(
+                      //                               // Memformat nilai faktur dengan NumberFormat
+                      //                               '-${NumberFormat.currency(
+                      //                                 locale: 'id',
+                      //                                 symbol: 'Rp',
+                      //                                 decimalDigits: 0,
+                      //                               ).format(fakturSaatIni)}',
+                      //                               style: TextStyle(
+                      //                                 color: Colors.red,
+                      //                                 fontWeight:
+                      //                                     FontWeight.bold,
+                      //                                 fontSize: 16,
+                      //                               ),
+                      //                             ),
+                      //                           ],
+                      //                         ),
+                      //                       ],
+                      //                     ),
+                      //                   ),
+                      //                   SizedBox(height: 16),
+                      //                 ],
+                      //               );
+                      //             }).toList(),
+                      //           );
+                      //         }),
 
-                              // Tombol "Kelola Kartu"
-                              Center(
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    Get.toNamed('/creditcard');
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    side: BorderSide(color: Colors.black),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 48, vertical: 16),
-                                  ),
-                                  child: Text(
-                                    'Kelola Kartu',
-                                    style: TextStyle(color: Colors.black),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
+                      //         // Tombol "Kelola Kartu"
+                      //         Center(
+                      //           child: ElevatedButton(
+                      //             onPressed: () {
+                      //               Get.toNamed('/creditcard');
+                      //             },
+                      //             style: ElevatedButton.styleFrom(
+                      //               backgroundColor: Colors.transparent,
+                      //               side: BorderSide(color: Colors.black),
+                      //               shape: RoundedRectangleBorder(
+                      //                 borderRadius: BorderRadius.circular(8),
+                      //               ),
+                      //               padding: EdgeInsets.symmetric(
+                      //                   horizontal: 48, vertical: 16),
+                      //             ),
+                      //             child: Text(
+                      //               'Kelola Kartu',
+                      //               style: TextStyle(color: Colors.black),
+                      //             ),
+                      //           ),
+                      //         ),
+                      //       ],
+                      //     ),
+                      //   ),
+                      // )
                     ],
                   ),
                 ),

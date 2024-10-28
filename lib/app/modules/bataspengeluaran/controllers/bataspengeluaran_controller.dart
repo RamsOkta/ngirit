@@ -97,6 +97,7 @@ class BataspengeluaranController extends GetxController {
   Stream<double> getTotalPengeluaran(String kategori) {
     return firestore
         .collection('pengeluaran')
+        .where('user_id', isEqualTo: userId)
         .where('kategori', isEqualTo: kategori)
         .where('createdAt', isGreaterThanOrEqualTo: startOfMonth)
         .where('createdAt', isLessThanOrEqualTo: endOfMonth)
