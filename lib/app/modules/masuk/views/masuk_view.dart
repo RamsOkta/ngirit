@@ -58,7 +58,7 @@ class MasukView extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Welcome To Your Saving Journey',
+                  'Selamat Datang di Perjalanan Menabung Anda',
                   style: TextStyle(
                     fontFamily: 'Lilita One',
                     fontSize: 32,
@@ -70,8 +70,8 @@ class MasukView extends StatelessWidget {
 
               // Teks placeholder
               Text(
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-                textAlign: TextAlign.center,
+                'Kelola Uang Anda Lebih Mudah.',
+                textAlign: TextAlign.left,
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[700],

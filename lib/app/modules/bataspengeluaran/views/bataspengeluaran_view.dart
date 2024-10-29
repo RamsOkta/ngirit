@@ -1428,16 +1428,16 @@ class BataspengeluaranView extends GetView<BataspengeluaranController> {
           ),
           actions: [
             TextButton(
-              child: Text('Simpan'),
+              child: Text('Batal'),
               onPressed: () {
-                double jumlah = double.tryParse(jumlahController.text) ?? 0.0;
-                controller.addBatasPengeluaran(kategori, jumlah);
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Batal'),
+              child: Text('Simpan'),
               onPressed: () {
+                double jumlah = double.tryParse(jumlahController.text) ?? 0.0;
+                controller.addBatasPengeluaran(kategori, jumlah);
                 Navigator.of(context).pop();
               },
             ),

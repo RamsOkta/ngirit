@@ -51,8 +51,7 @@ class SaldoController extends GetxController {
 
           for (var doc in accountSnapshot.docs) {
             var accountData = doc.data();
-            String namaAkun = accountData['nama_akun'].toString().toUpperCase();
-
+            String namaAkun = accountData['nama_akun'];
             int saldoAwal = int.tryParse(accountData['saldo_awal']) ?? 0;
 
             // Stream real-time buat pendapatan

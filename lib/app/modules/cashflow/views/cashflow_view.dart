@@ -348,7 +348,7 @@ class CashflowView extends StatelessWidget {
                 ),
               )),
 
-          // Main content with Padding
+// Main content with Padding
           Padding(
             padding: const EdgeInsets.only(top: 160.0), // Adjusted top padding
             child: Column(
@@ -370,8 +370,9 @@ class CashflowView extends StatelessWidget {
                                 shrinkWrap: true,
                                 itemCount: controller.filteredExpenses.length,
                                 itemBuilder: (context, index) {
-                                  final expense =
-                                      controller.filteredExpenses[index];
+                                  final expense = controller.filteredExpenses
+                                      .reversed // Mengurutkan data terbaru di atas
+                                      .toList()[index];
 
                                   // Menentukan ikon berdasarkan kategori
                                   String assetPath;
@@ -417,7 +418,7 @@ class CashflowView extends StatelessWidget {
                                       break;
                                     default:
                                       assetPath =
-                                          'assets/icons/icons8-no-96.png'; // Ikon default jika kategori tidak cocok
+                                          'assets/icons/icons8-no-96.png';
                                   }
 
                                   return Card(
@@ -432,19 +433,15 @@ class CashflowView extends StatelessWidget {
                                         backgroundColor: Colors.transparent,
                                         child: Image.asset(
                                           assetPath,
-                                          fit: BoxFit
-                                              .cover, // Menyesuaikan gambar dalam CircleAvatar
+                                          fit: BoxFit.cover,
                                         ),
                                       ),
                                       title: Text(
                                         NumberFormat.currency(
-                                          locale:
-                                              'id', // Menggunakan locale Indonesia
-                                          symbol: 'Rp ', // Simbol mata uang
-                                          decimalDigits:
-                                              0, // Tidak ada digit desimal
-                                        ).format(expense['nominal'] ??
-                                            0), // Format nominal dari expense
+                                          locale: 'id',
+                                          symbol: 'Rp ',
+                                          decimalDigits: 0,
+                                        ).format(expense['nominal'] ?? 0),
                                         style: TextStyle(
                                           color: Colors.red,
                                           fontWeight: FontWeight.bold,
@@ -468,20 +465,15 @@ class CashflowView extends StatelessWidget {
                                 },
                               ),
                         controller.filteredIncome.isEmpty
-                            ? Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Text(
-                                  'Belum ada data di bulan ini',
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                              )
+                            ? Padding(padding: const EdgeInsets.all(16.0))
                             : ListView.builder(
                                 physics: NeverScrollableScrollPhysics(),
                                 shrinkWrap: true,
                                 itemCount: controller.filteredIncome.length,
                                 itemBuilder: (context, index) {
-                                  final income =
-                                      controller.filteredIncome[index];
+                                  final income = controller.filteredIncome
+                                      .reversed // Mengurutkan data terbaru di atas
+                                      .toList()[index];
 
                                   // Menentukan ikon berdasarkan kategori
                                   String assetPath;
@@ -504,7 +496,7 @@ class CashflowView extends StatelessWidget {
                                       break;
                                     default:
                                       assetPath =
-                                          'assets/icons/icons8-no-96.png'; // Ikon default jika kategori tidak cocok
+                                          'assets/icons/icons8-no-96.png';
                                   }
 
                                   return Card(
@@ -519,19 +511,15 @@ class CashflowView extends StatelessWidget {
                                         backgroundColor: Colors.transparent,
                                         child: Image.asset(
                                           assetPath,
-                                          fit: BoxFit
-                                              .cover, // Menyesuaikan gambar dalam CircleAvatar
+                                          fit: BoxFit.cover,
                                         ),
                                       ),
                                       title: Text(
                                         NumberFormat.currency(
-                                          locale:
-                                              'id', // Menggunakan locale Indonesia
-                                          symbol: 'Rp ', // Simbol mata uang
-                                          decimalDigits:
-                                              0, // Tidak ada digit desimal
-                                        ).format(income['nominal'] ??
-                                            0), // Format nominal dari income
+                                          locale: 'id',
+                                          symbol: 'Rp ',
+                                          decimalDigits: 0,
+                                        ).format(income['nominal'] ?? 0),
                                         style: TextStyle(
                                           color: Colors.green,
                                           fontWeight: FontWeight.bold,

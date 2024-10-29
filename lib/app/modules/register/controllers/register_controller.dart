@@ -42,7 +42,7 @@ class RegisterController extends GetxController {
             .collection('accounts')
             .doc() // Menggunakan doc() tanpa parameter untuk ID otomatis
             .set({
-          'nama_akun': 'Bank',
+          'nama_akun': 'DefaultAcc',
           'saldo_awal': '1000000',
           'icon': 'assets/icons/default_icon.png', // Simpan sebagai string
           'user_id': userCredential.user!.uid,
@@ -50,6 +50,10 @@ class RegisterController extends GetxController {
 
         print("User and account registered successfully");
         Get.snackbar("Success", "Registered successfully");
+
+        // Navigasi ke halaman login setelah registrasi berhasil
+        Get.offNamed(
+            '/login'); // Ganti '/login' sesuai dengan route halaman login Anda
       } on FirebaseAuthException catch (e) {
         print("Registration failed: ${e.message}");
         Get.snackbar("Error", e.message ?? "Registration failed");

@@ -8,25 +8,32 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   int currentIndex = 0;
+  final PageController _pageController = PageController();
 
-  // List berisi data onboarding (gambar dan teks)
   final List<Map<String, String>> onboardingData = [
     {
       "image": "assets/images/onboarding_image.png",
-      "title": "Welcome to your\nsaving journey",
-      "subtitle": "Together, we'll make saving easy\nand rewarding",
+      "title": "Selamat Datang di\nPerjalanan Hemat Anda",
+      "subtitle":
+          "Bersama-sama, Kami Akan Membuat Penghematan Menjadi Mudah\nDan Bermanfaat",
     },
     {
       "image": "assets/images/onboarding_image2.png",
-      "title": "Welcome to your\nsaving journey",
-      "subtitle": "Together, we'll make saving easy\nand rewarding",
+      "title": "Bergabunglah Dengan Kami\nTabungan Cerdas",
+      "subtitle": "Perjalanan FInansial Anda diMulai disini!",
     },
     {
       "image": "assets/images/onboarding_image1.png",
-      "title": "Welcome to your\nsaving journey",
-      "subtitle": "Together, we'll make saving easy\nand rewarding",
+      "title": "Tetap Pada Jalur\nDengan Mudah",
+      "subtitle": "Lacak Pengeluaran dan Capai Tujuan.",
     },
   ];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,29 +45,45 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             Expanded(
               flex: 3,
-              child: Image.asset(onboardingData[currentIndex]["image"]!),
-            ),
-            // Mengurangi jarak antara gambar dan teks
-            SizedBox(height: 10),
-            Text(
-              onboardingData[currentIndex]["title"]!,
-              style: TextStyle(
-                fontFamily: 'LilitaOne',
-                fontSize: 32, // Adjust as needed
-                color: Colors.indigo.shade900,
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    currentIndex = index;
+                  });
+                },
+                itemCount: onboardingData.length,
+                itemBuilder: (context, index) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(onboardingData[index]["image"]!,
+                          height: 200, fit: BoxFit.cover),
+                      SizedBox(height: 10),
+                      Text(
+                        onboardingData[index]["title"]!,
+                        style: TextStyle(
+                          fontFamily: 'LilitaOne',
+                          fontSize: 32,
+                          color: Colors.indigo.shade900,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        onboardingData[index]["subtitle"]!,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  );
+                },
               ),
-              textAlign: TextAlign.center,
             ),
-            SizedBox(height: 8), // Mengurangi jarak antara title dan subtitle
-            Text(
-              onboardingData[currentIndex]["subtitle"]!,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 20), // Add space between the text and dots
+            SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
@@ -68,14 +91,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 (index) => buildDot(currentIndex == index),
               ),
             ),
-            Spacer(), // This spacer separates the dots from the buttons below
+            Spacer(),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Tombol SKIP dengan warna dan ketebalan teks yang bisa diatur
                 TextButton(
                   onPressed: () {
-                    // Skip button langsung ke halaman berikutnya
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
@@ -87,13 +108,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     'SKIP',
                     style: TextStyle(
                       fontSize: 16,
-                      color: const Color.fromRGBO(
-                          49, 53, 110, 1), // Warna teks bisa diubah
-                      fontWeight: FontWeight.w600, // Ketebalan teks
+                      color: const Color.fromRGBO(49, 53, 110, 1),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                // Tombol NEXT dengan pengaturan kotak, warna teks, ketebalan teks, dan lengkungan
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
@@ -101,15 +120,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                     textStyle: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.bold, // Ketebalan teks
-                    ), // Warna teks
+                      fontWeight: FontWeight.bold,
+                    ),
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(12), // Lengkungan kotak
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   onPressed: () {
-                    // Jika ini halaman terakhir, lanjut ke NextScreen
                     if (currentIndex == onboardingData.length - 1) {
                       Navigator.pushReplacement(
                         context,
@@ -118,14 +135,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       );
                     } else {
-                      setState(() {
-                        currentIndex++;
-                      });
+                      _pageController.nextPage(
+                        duration: Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
                     }
                   },
                   child: Text(currentIndex == onboardingData.length - 1
-                      ? 'FINISH'
-                      : 'NEXT'),
+                      ? 'SELESAI'
+                      : 'LANJUT'),
                 ),
               ],
             ),
@@ -136,7 +154,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // Widget untuk membuat indikator titik
   Widget buildDot(bool isActive) {
     return AnimatedContainer(
       duration: Duration(milliseconds: 300),
@@ -146,23 +163,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       decoration: BoxDecoration(
         color: isActive ? Colors.indigo : Colors.grey,
         borderRadius: BorderRadius.circular(6),
-      ),
-    );
-  }
-}
-
-class NextScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Next Screen'),
-      ),
-      body: Center(
-        child: Text(
-          'This is the next screen!',
-          style: TextStyle(fontSize: 24),
-        ),
       ),
     );
   }

@@ -89,11 +89,10 @@ class DashboardController extends GetxController {
   }
 
   // Listen for account updates and calculate total saldo
-  void listenToAccountUpdates() {
+  void listenToAccountUpdates() async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Mengawasi perubahan pada koleksi 'accounts'
         FirebaseFirestore.instance
             .collection('accounts')
             .where('user_id', isEqualTo: user.uid)
@@ -102,47 +101,48 @@ class DashboardController extends GetxController {
           accounts.clear();
           var totalSaldo = 0;
 
-          // Looping secara asinkron untuk setiap dokumen akun
           for (var doc in accountSnapshot.docs) {
             var accountData = doc.data();
-            String namaAkun = accountData['nama_akun'].toString().toUpperCase();
-
-            // Ambil saldo awal dari koleksi accounts
+            String namaAkun =
+                accountData['nama_akun']; // tidak menggunakan toUpperCase
             int saldoAwal = int.tryParse(accountData['saldo_awal']) ?? 0;
 
-            // Stream real-time untuk pendapatan
-            var pendapatanStream = FirebaseFirestore.instance
+            // Mengambil total pendapatan untuk akun ini
+            var pendapatanFuture = FirebaseFirestore.instance
                 .collection('pendapatan')
                 .where('akun', isEqualTo: namaAkun)
                 .where('user_id', isEqualTo: user.uid)
-                .snapshots();
+                .snapshots()
+                .first
+                .then((pendapatanSnapshot) {
+              int totalPendapatan = pendapatanSnapshot.docs.fold(0,
+                  (total, doc) => total + int.tryParse(doc['nominal'] ?? '0')!);
+              print("Total Pendapatan untuk akun $namaAkun: $totalPendapatan");
+              return totalPendapatan;
+            });
 
-            // Stream real-time untuk pengeluaran
-            var pengeluaranStream = FirebaseFirestore.instance
+            // Mengambil total pengeluaran untuk akun ini
+            var pengeluaranFuture = FirebaseFirestore.instance
                 .collection('pengeluaran')
                 .where('akun', isEqualTo: namaAkun)
                 .where('user_id', isEqualTo: user.uid)
-                .snapshots();
-
-            // Mendengarkan stream pendapatan dan pengeluaran secara paralel
-            var pendapatanSnapshot = await pendapatanStream.first;
-            var pengeluaranSnapshot = await pengeluaranStream.first;
-
-            // Hitung total pendapatan
-            int totalPendapatan = pendapatanSnapshot.docs.fold(0, (total, doc) {
-              return total + (int.tryParse(doc['nominal']) ?? 0);
+                .snapshots()
+                .first
+                .then((pengeluaranSnapshot) {
+              int totalPengeluaran = pengeluaranSnapshot.docs.fold(0,
+                  (total, doc) => total + int.tryParse(doc['nominal'] ?? '0')!);
+              print(
+                  "Total Pengeluaran untuk akun $namaAkun: $totalPengeluaran");
+              return totalPengeluaran;
             });
 
-            // Hitung total pengeluaran
-            int totalPengeluaran =
-                pengeluaranSnapshot.docs.fold(0, (total, doc) {
-              return total + (int.tryParse(doc['nominal']) ?? 0);
-            });
+            List<int> results =
+                await Future.wait([pendapatanFuture, pengeluaranFuture]);
+            int totalPendapatan = results[0];
+            int totalPengeluaran = results[1];
 
-            // Hitung saldo akhir
             int saldoAkhir = saldoAwal + totalPendapatan - totalPengeluaran;
 
-            // Cek apakah akun sudah ada di list
             var existingAccountIndex = accounts.indexWhere(
                 (account) => account['nama_akun'] == accountData['nama_akun']);
             if (existingAccountIndex != -1) {
@@ -165,12 +165,11 @@ class DashboardController extends GetxController {
               });
             }
 
-            // Menambahkan saldo akhir ke total saldo
             totalSaldo += saldoAkhir;
           }
 
-          // Mengupdate nilai total saldo setelah looping selesai
           saldo.value = totalSaldo;
+          print("Total Saldo: $totalSaldo");
         });
       }
     } catch (e) {

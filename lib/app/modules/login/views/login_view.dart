@@ -35,7 +35,7 @@ class LoginView extends StatelessWidget {
                 ),
               ),
               Text(
-                'Login',
+                'Masuk',
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 32,
@@ -44,7 +44,7 @@ class LoginView extends StatelessWidget {
                 ),
               ),
               Text(
-                'Login to continue using the app',
+                'Masuk Untuk Menggunakan Aplikasi',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[600],
@@ -67,7 +67,7 @@ class LoginView extends StatelessWidget {
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Color(0xFFeaebf0),
-                    hintText: 'Enter your email',
+                    hintText: 'Masukan email Anda',
                     hintStyle: TextStyle(
                       color: Color(0xFF8d90af),
                     ),
@@ -100,7 +100,7 @@ class LoginView extends StatelessWidget {
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Color(0xFFeaebf0),
-                        hintText: 'Enter your password',
+                        hintText: 'Masukan password Anda',
                         hintStyle: TextStyle(
                           color: Color(0xFF8d90af),
                         ),
@@ -135,7 +135,7 @@ class LoginView extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: controller.login,
                         child: Text(
-                          'Login',
+                          'Masuk',
                           style: TextStyle(
                             fontSize: 20,
                             fontFamily: 'Inter',
@@ -159,9 +159,9 @@ class LoginView extends StatelessWidget {
                   text: TextSpan(
                     style: TextStyle(color: Colors.grey[600], fontSize: 16),
                     children: [
-                      TextSpan(text: "Don’t have an account? "),
+                      TextSpan(text: "Tidak Memiliki Akun? "),
                       TextSpan(
-                        text: "Register",
+                        text: "Registrasi",
                         style: TextStyle(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
