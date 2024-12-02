@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,6 +14,10 @@ class StatisticController extends GetxController {
   var income = <double>[].obs;
 
   var expense = <double>[].obs;
+  var tappedIndex = (-1).obs;
+  var tooltipPosition = Offset.zero.obs;
+  final GlobalKey stackKey = GlobalKey();
+  var isExpanded = false.obs;
 
   var totalIncome = 0.obs; // Total pemasukan
   var totalExpense = 0.obs; // Total pengeluaran
@@ -26,7 +32,8 @@ class StatisticController extends GetxController {
   var creditCards = <Map<String, dynamic>>[].obs;
   var accounts = <Map<String, dynamic>>[].obs;
   TextEditingController deskripsiController = TextEditingController();
-
+  TextEditingController pengeluaranController = TextEditingController();
+  TextEditingController pendapatanController = TextEditingController();
   TextEditingController nominalController = TextEditingController();
 
   var selectedDate = DateTime.now().obs;
@@ -52,7 +59,8 @@ class StatisticController extends GetxController {
   DateTime get endOfMonth {
     final nextMonth =
         DateTime(selectedDate.value.year, selectedDate.value.month + 1, 1);
-    return nextMonth.subtract(Duration(days: 1));
+    return nextMonth.subtract(
+        Duration(seconds: 1)); // Memastikan akhir bulan hingga 23:59:59
   }
 
   // Ambil bulan depan, sekarang, dan sebelumnya
@@ -82,6 +90,7 @@ class StatisticController extends GetxController {
                 : 0);
     selectedDate.value =
         DateTime(newYear, (newMonth % 12) == 0 ? 12 : newMonth % 12);
+
     fetchTotalIncome();
     fetchTotalExpense();
     fetchTotalBalance();
@@ -148,7 +157,6 @@ class StatisticController extends GetxController {
     }
   }
 
-  // Method untuk mengambil data pemasukan
   // Method untuk mengambil data pemasukan secara real-time
   void fetchIncome() {
     _firestore
@@ -202,7 +210,7 @@ class StatisticController extends GetxController {
       // Map untuk menyimpan total pengeluaran per kategori
       Map<String, double> categoryTotals = {
         'Makan': 0.0,
-        'Transportasi': 0.0,
+        'Transport': 0.0,
         'Belanja': 0.0,
         'Hiburan': 0.0,
         'Pendidikan': 0.0,
@@ -246,8 +254,8 @@ class StatisticController extends GetxController {
       ),
       PieChartSectionData(
         color: Colors.blue,
-        value: categoryTotals['Transportasi'] ?? 0.0,
-        title: 'Transportasi',
+        value: categoryTotals['Transport'] ?? 0.0,
+        title: 'Transport',
         radius: 50,
       ),
       PieChartSectionData(
@@ -399,9 +407,66 @@ class StatisticController extends GetxController {
     }
   }
 
+  Future<void> showSuccessAnimation(BuildContext context) async {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: '',
+      pageBuilder: (BuildContext context, Animation<double> animation,
+          Animation<double> secondaryAnimation) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(
+              sigmaX: 8, sigmaY: 8), // Efek blur pada background
+          child: Center(
+            child: ScaleTransition(
+              scale: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutBack,
+              ),
+              child: Container(
+                width: 250, // Ukuran lebih besar agar muat teks dan ikon
+                height: 250,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 100,
+                    ),
+                    SizedBox(height: 10), // Spasi antara ikon dan teks
+                    Text(
+                      "Data Berhasil Diisi",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      transitionDuration: Duration(milliseconds: 400),
+    );
+
+    // Tunggu beberapa detik, kemudian tutup dialog
+    await Future.delayed(Duration(seconds: 3));
+    Navigator.of(context, rootNavigator: true).pop();
+  }
+
   Future<void> saveFormData(String nominal) async {
     final controller = Get.find<StatisticController>();
     String collection;
+
     switch (controller.selectedTab.value) {
       case 0:
         collection = 'pengeluaran';
@@ -409,36 +474,101 @@ class StatisticController extends GetxController {
       case 1:
         collection = 'pendapatan';
         break;
-      // case 2:
-      //   collection = 'transfer';
-      //   break;
       default:
         collection = 'pengeluaran';
     }
 
-    if (controller.selectedKategori.isNotEmpty &&
-        controller.selectedAkun.isNotEmpty &&
-        controller.selectedDates.isNotEmpty) {
-      try {
-        User? user = FirebaseAuth.instance.currentUser;
-
-        if (user != null) {
-          await FirebaseFirestore.instance.collection(collection).add({
-            'user_id': user.uid,
-            'nominal': nominal,
-            'deskripsi': controller.deskripsi.value,
-            'kategori': controller.selectedKategori.value,
-            'akun': controller.selectedAkun.value,
-            'tanggal': controller.selectedDates.value,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-          Get.snackbar('Success', 'Data berhasil disimpan ke $collection');
-        }
-      } catch (e) {
-        Get.snackbar('Error', 'Gagal menyimpan data ke $collection');
-      }
-    } else {
-      Get.snackbar('Error', 'Pastikan semua field diisi');
+    if (nominal.isEmpty || nominal == '0,00') {
+      Get.snackbar(
+        "Error",
+        "Nominal tidak boleh kosong atau nol",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        snackPosition:
+            SnackPosition.TOP, // Menampilkan notifikasi di bagian atas
+        duration: Duration(seconds: 2),
+      );
+      return;
     }
+
+    if (controller.deskripsi.value.isEmpty ||
+        controller.selectedKategori.value.isEmpty ||
+        controller.selectedAkun.value.isEmpty ||
+        controller.selectedDates.value.isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Semua field wajib diisi",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        snackPosition:
+            SnackPosition.TOP, // Menampilkan notifikasi di bagian atas
+        duration: Duration(seconds: 2),
+      );
+      return;
+    }
+
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        String sanitizedNominal = nominal.replaceAll(',', '');
+
+        await FirebaseFirestore.instance.collection(collection).add({
+          'user_id': user.uid,
+          'nominal': sanitizedNominal,
+          'deskripsi': controller.deskripsi.value,
+          'kategori': controller.selectedKategori.value,
+          'akun': controller.selectedAkun.value,
+          'tanggal': controller.selectedDates.value,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        showSuccessAnimation(Get.context!);
+
+        controller.nominalController.clear();
+        controller.deskripsiController.clear();
+        controller.selectedKategori.value = '';
+        controller.selectedAkun.value = '';
+        controller.selectedDates.value = '';
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Gagal menyimpan data ke $collection",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        snackPosition:
+            SnackPosition.TOP, // Menampilkan notifikasi di bagian atas
+        duration: Duration(seconds: 2),
+      );
+    }
+  }
+
+  void clearForm(int selectedTab) {
+    if (selectedTab == 0) {
+      // Kosongkan controller untuk Pengeluaran
+      pengeluaranController.clear();
+    } else if (selectedTab == 1) {
+      // Kosongkan controller untuk Pendapatan
+      pendapatanController.clear();
+    }
+  }
+
+  void resetFormData() {
+    // Reset controller teks
+    deskripsiController.clear();
+
+    // Reset nominal (pastikan ini adalah controller nominal yang benar)
+    if (selectedTab.value == 0) {
+      pengeluaranController.clear();
+    } else {
+      pendapatanController.clear();
+    }
+
+    // Reset semua variabel yang diperlukan
+    selectedKategori.value = ''; // Reset kategori
+    selectedAkun.value = ''; // Reset akun
+    // Reset tanggal
+    deskripsi.value = ''; // Reset deskripsi
   }
 }

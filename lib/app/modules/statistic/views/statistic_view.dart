@@ -1,14 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-
 import '../controllers/statistic_controller.dart';
+
+class NumberInputFormatter extends TextInputFormatter {
+  final NumberFormat _formatter = NumberFormat.decimalPattern('en');
+
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    // Jika input kosong, tidak perlu diformat
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    // Hapus semua pemisah lama agar hanya tersisa angka
+    final intSelectionIndex = newValue.selection.baseOffset;
+    final String pureNumber = newValue.text.replaceAll(',', '');
+
+    // Format angka dengan pemisah ribuan
+    final newText = _formatter.format(int.parse(pureNumber));
+
+    // Kembalikan nilai baru dengan posisi kursor yang benar
+    return TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(
+        offset: intSelectionIndex + (newText.length - pureNumber.length),
+      ),
+    );
+  }
+}
 
 class StatisticView extends GetView<StatisticController> {
   final StatisticController controller = Get.put(StatisticController());
   final TextEditingController nominalController = TextEditingController();
+  final FocusNode deskripsiFocusNode = FocusNode();
+
+  final FocusNode kategoriFocusNode = FocusNode();
+
+  final FocusNode akunFocusNode = FocusNode();
+
+  final FocusNode tanggalFocusNode = FocusNode();
 
   @override
   Widget build(BuildContext context) {
@@ -244,19 +279,6 @@ class StatisticView extends GetView<StatisticController> {
                                 Text('Pengeluaran'),
                               ],
                             ),
-                            Column(
-                              children: [
-                                Obx(() => Text(
-                                      // Format nilai totalBalance dengan format rupiah
-                                      '${NumberFormat.currency(locale: 'id', symbol: 'Rp', decimalDigits: 0).format(controller.totalBalance.value)}',
-                                      style: TextStyle(
-                                        color: Colors.blue,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )),
-                                Text('Saldo'),
-                              ],
-                            ),
                           ],
                         ),
                       ],
@@ -267,9 +289,9 @@ class StatisticView extends GetView<StatisticController> {
                     'Pengeluaran Berdasarkan Kategori',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
+                  SizedBox(height: 15),
 // 'Pengeluaran Berdasarkan Kategori' pie chart
                   Container(
-                    height: 300, // Tinggi total untuk kontainer
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -288,69 +310,250 @@ class StatisticView extends GetView<StatisticController> {
                       if (controller.pieChartData.isEmpty) {
                         return Center(child: Text('Tidak ada data'));
                       } else {
-                        // Menghitung total pengeluaran
                         double totalAmount =
                             controller.pieChartData.fold(0.0, (sum, section) {
                           return sum + section.value;
                         });
 
-                        return Column(
+                        final sortedData = controller.pieChartData.toList();
+
+                        sortedData.sort((a, b) => b.value.compareTo(a.value));
+
+                        int visibleItemCount =
+                            controller.isExpanded.value ? sortedData.length : 3;
+
+                        return Stack(
+                          key: controller
+                              .stackKey, // Menggunakan GlobalKey pada Stack
+
                           children: [
-                            Expanded(
-                              child: PieChart(
-                                PieChartData(
-                                  sections: controller.pieChartData,
-                                  centerSpaceRadius: 40,
-                                  sectionsSpace: 2,
-                                ),
-                              ),
-                            ),
-                            // Jarak antara pie chart dan keterangan
-                            Container(
-                              height: 80, // Batasi tinggi untuk keterangan
-                              child: ListView(
-                                children:
-                                    controller.pieChartData.map((section) {
-                                  String category =
-                                      section.title; // Mengambil nama kategori
-                                  double value = section.value;
-                                  double percentage = (totalAmount > 0)
-                                      ? (value / totalAmount) * 100
-                                      : 0;
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  height:
+                                      175, // Atur tinggi PieChart sesuai kebutuhan
 
-                                  // Format nilai nominal dengan format rupiah (Rp 1.000.000)
-                                  final formattedValue = NumberFormat.currency(
-                                    locale: 'id', // Locale Indonesia
-                                    symbol: 'Rp', // Simbol Rupiah
-                                    decimalDigits: 0, // Tidak ada desimal
-                                  ).format(value);
-
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 4.0),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 16,
-                                          height: 16,
-                                          color: section.color,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          '$category: $formattedValue (${percentage.toStringAsFixed(1)}%)',
-                                          style: TextStyle(fontSize: 14),
-                                        ),
-                                      ],
+                                  child: PieChart(
+                                    PieChartData(
+                                      sections: sortedData,
+                                      centerSpaceRadius: 40,
+                                      sectionsSpace: 2,
                                     ),
-                                  );
-                                }).toList(),
-                              ),
+                                  ),
+                                ),
+
+                                SizedBox(
+                                    height:
+                                        20), // Jarak antara PieChart dan keterangan
+
+                                // Bagian keterangan dengan Show More
+
+                                Column(
+                                  children: sortedData
+                                      .asMap()
+                                      .entries
+                                      .take(visibleItemCount)
+                                      .map((entry) {
+                                    int index = entry.key;
+
+                                    var section = entry.value;
+
+                                    String category = section.title;
+
+                                    double value = section.value;
+
+                                    double percentage = (totalAmount > 0)
+                                        ? (value / totalAmount) * 100
+                                        : 0;
+
+                                    final formattedValue =
+                                        NumberFormat.currency(
+                                      locale: 'id',
+                                      symbol: 'Rp',
+                                      decimalDigits: 0,
+                                    ).format(value);
+
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 6.0),
+                                      child: Row(
+                                        children: [
+                                          SizedBox(
+                                            width: 70,
+                                            child: Text(
+                                              category,
+                                              style: TextStyle(fontSize: 12),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Stack(
+                                              alignment: Alignment.centerLeft,
+                                              children: [
+                                                Container(
+                                                  height: 20,
+                                                  decoration: BoxDecoration(
+                                                    color: section.color
+                                                        .withOpacity(0.2),
+                                                  ),
+                                                ),
+                                                GestureDetector(
+                                                  onLongPressStart: (details) {
+                                                    final stackBox = controller
+                                                            .stackKey.currentContext
+                                                            ?.findRenderObject()
+                                                        as RenderBox?;
+
+                                                    final stackPosition =
+                                                        stackBox?.localToGlobal(
+                                                            Offset.zero);
+
+                                                    if (stackPosition != null) {
+                                                      controller.tooltipPosition
+                                                          .value = details
+                                                              .globalPosition -
+                                                          stackPosition;
+
+                                                      controller.tappedIndex
+                                                          .value = index;
+                                                    }
+                                                  },
+                                                  onLongPressEnd: (_) {
+                                                    controller
+                                                        .tappedIndex.value = -1;
+                                                  },
+                                                  child: FractionallySizedBox(
+                                                    widthFactor: (totalAmount >
+                                                            0)
+                                                        ? (value / totalAmount)
+                                                            .clamp(0.0, 1.0)
+                                                        : 0.0,
+                                                    child: Container(
+                                                      height: 20,
+                                                      color: section.color,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+
+                                // Tombol Show More / Show Less
+
+                                if (sortedData.length > 3)
+                                  TextButton(
+                                    onPressed: () {
+                                      controller.isExpanded.value =
+                                          !controller.isExpanded.value;
+                                    },
+                                    child: Text(
+                                      controller.isExpanded.value
+                                          ? 'Tutup '
+                                          : 'Semua',
+                                      style: TextStyle(color: Colors.blue),
+                                    ),
+                                  ),
+                              ],
                             ),
+
+                            // Tooltip Kustom berada di dalam Stack di atas semua elemen lainnya
+
+                            Obx(() {
+                              if (controller.tappedIndex.value != -1) {
+                                int tappedIndex = controller.tappedIndex.value;
+
+                                var section = sortedData[tappedIndex];
+
+                                double value = section.value;
+
+                                double percentage = (totalAmount > 0)
+                                    ? (value / totalAmount) * 100
+                                    : 0;
+
+                                final formattedValue = NumberFormat.currency(
+                                  locale: 'id',
+                                  symbol: 'Rp',
+                                  decimalDigits: 0,
+                                ).format(value);
+
+                                // Menampilkan tooltip pada posisi relatif yang telah dihitung
+
+                                return Positioned(
+                                  left: controller.tooltipPosition.value.dx -
+                                      50, // Sesuaikan posisi
+
+                                  top: controller.tooltipPosition.value.dy -
+                                      60, // Sesuaikan posisi
+
+                                  child: Material(
+                                    elevation: 4,
+                                    color: Colors.transparent,
+                                    child: Container(
+                                      padding: EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black87,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        '$formattedValue (${percentage.toStringAsFixed(1)}%)',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return SizedBox.shrink();
+                              }
+                            }),
+
+                            // GestureDetector untuk menangani klik pada bagian kosong atau yang belum terisi
+
+                            ...sortedData.map((section) {
+                              // Bagian kosong atau yang belum terisi
+
+                              return Positioned(
+                                left: 0,
+                                top: 0,
+                                child: GestureDetector(
+                                  onTapDown: (details) {
+                                    final stackBox = controller
+                                        .stackKey.currentContext
+                                        ?.findRenderObject() as RenderBox?;
+
+                                    final stackPosition =
+                                        stackBox?.localToGlobal(Offset.zero);
+
+                                    if (stackPosition != null) {
+                                      controller.tooltipPosition.value =
+                                          details.globalPosition -
+                                              stackPosition;
+
+                                      controller.tappedIndex.value =
+                                          -1; // Menandakan klik area kosong
+                                    }
+                                  },
+                                  child: Container(
+                                    width:
+                                        50, // Sesuaikan ukuran dengan area kosong
+
+                                    height: 20,
+
+                                    color: Colors
+                                        .transparent, // Tidak terlihat, tapi area bisa di-tap
+                                  ),
+                                ),
+                              );
+                            }).toList(),
                           ],
                         );
                       }
                     }),
-                  ),
+                  )
                 ],
               ),
             ),
@@ -439,10 +642,6 @@ class StatisticView extends GetView<StatisticController> {
                       backgroundColor =
                           Colors.green; // Warna hijau untuk Pendapatan
                       break;
-                    // case 2:
-                    //   backgroundColor =
-                    //       Colors.blue; // Warna biru untuk Transfer
-                    //   break;
                     default:
                       backgroundColor = Colors.red;
                   }
@@ -459,7 +658,6 @@ class StatisticView extends GetView<StatisticController> {
                           children: [
                             _buildTabItem('Pengeluaran', Colors.red, 0),
                             _buildTabItem('Pendapatan', Colors.green, 1),
-                            // _buildTabItem('Transfer', Colors.blue, 2),
                           ],
                         ),
                         // Input angka "0,00" di dalam background color
@@ -470,8 +668,10 @@ class StatisticView extends GetView<StatisticController> {
                               Spacer(), // Menggeser input ke kanan
                               Expanded(
                                 child: TextField(
-                                  controller:
-                                      nominalController, // Menggunakan controller
+                                  controller: controller.selectedTab.value == 0
+                                      ? controller.pengeluaranController
+                                      : controller
+                                          .pendapatanController, // Controller per tab
                                   keyboardType: TextInputType.number,
                                   textAlign:
                                       TextAlign.right, // Teks sejajar kanan
@@ -488,8 +688,12 @@ class StatisticView extends GetView<StatisticController> {
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
                                   ),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter
+                                        .digitsOnly, // Hanya menerima angka
+                                    NumberInputFormatter(), // Formatter angka dengan pemisah ribuan
+                                  ],
                                 ),
-// Hilangkan koma yang tidak perlu di sini
                               ),
                             ],
                           ),
@@ -522,25 +726,30 @@ class StatisticView extends GetView<StatisticController> {
                               return _buildPengeluaranForm(context);
                             case 1:
                               return _buildPendapatanForm(context);
-                            // case 2:
-                            //   return _buildTransferForm();
                             default:
                               return _buildPengeluaranForm(context);
                           }
                         }),
                         SizedBox(height: 20),
                         // Tombol Save di bagian bawah BottomSheet
-                        // Tombol Save di bagian bawah BottomSheet
                         Align(
                           alignment: Alignment.bottomCenter,
                           child: ElevatedButton(
                             onPressed: () {
-                              // Ambil nilai nominal dari nominalController sebagai String
-                              String nominal = nominalController.text;
+                              // Ambil nilai nominal dari controller yang sesuai
+                              String nominal = controller.selectedTab.value == 0
+                                  ? controller.pengeluaranController.text
+                                  : controller.pendapatanController.text;
 
                               // Panggil fungsi untuk menyimpan data ke Firebase
-                              controller.saveFormData(
-                                  nominal); // Panggil saveFormData() dari controller
+                              controller.saveFormData(nominal);
+
+                              // Kosongkan form setelah data disimpan
+                              controller
+                                  .clearForm(controller.selectedTab.value);
+
+                              // Tutup BottomSheet setelah menyimpan
+                              Navigator.pop(context);
                             },
                             style: ElevatedButton.styleFrom(
                               padding: EdgeInsets.symmetric(
@@ -551,7 +760,7 @@ class StatisticView extends GetView<StatisticController> {
                               backgroundColor: Colors.blue, // Warna tombol
                             ),
                             child: Text(
-                              'Save',
+                              'Simpan',
                               style:
                                   TextStyle(fontSize: 18, color: Colors.white),
                             ),
@@ -569,15 +778,28 @@ class StatisticView extends GetView<StatisticController> {
     );
   }
 
-// Fungsi untuk membuat text field di dalam bottom sheet
-// Fungsi untuk membuat TabItem di dalam bottom sheet
+  // Fungsi untuk membuat TabItem di dalam bottom sheet
   Widget _buildTabItem(String title, Color color, int index) {
     return Expanded(
       child: Obx(() {
         bool isSelected = controller.selectedTab.value == index;
         return GestureDetector(
           onTap: () {
+            // Jika tab saat ini berbeda dari tab yang diklik, reset semua data form
+            if (controller.selectedTab.value != index) {
+              controller.resetFormData();
+            }
+
+            // Set selected tab dan kosongkan controller sesuai tab yang dipilih
             controller.selectedTab.value = index;
+
+            if (index == 0) {
+              controller.pengeluaranController
+                  .clear(); // Bersihkan semua field di tab Pengeluaran
+            } else if (index == 1) {
+              controller.pendapatanController
+                  .clear(); // Bersihkan semua field di tab Pendapatan
+            }
           },
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -593,7 +815,7 @@ class StatisticView extends GetView<StatisticController> {
                   child: Text(
                     title,
                     style: TextStyle(
-                      color: Colors.white, // Selalu putih untuk teks
+                      color: Colors.white, // Teks selalu putih
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -618,307 +840,355 @@ class StatisticView extends GetView<StatisticController> {
   }
 
   Widget _buildPengeluaranForm(BuildContext context) {
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start, // Supaya label di atas text field
+    if (controller.selectedDates.value.isEmpty) {
+      final today = DateTime.now();
+      controller.selectedDates.value =
+          "${today.day}-${today.month}-${today.year}";
+    }
 
-      children: [
-        // TextField untuk Deskripsi
-
-        Text(
-          'Deskripsi', // Label di atas input field
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Column(
-            children: [
-              TextField(
-                controller: controller
-                    .deskripsiController, // Gunakan controller biasa tanpa Obx
+    return GestureDetector(
+      onTap: () {
+        // Menutup keyboard saat mengetuk di luar TextField
+        FocusScope.of(context).requestFocus(FocusNode());
+      },
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // TextField untuk Deskripsi Pendapatan
+            Text(
+              'Deskripsi',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: TextField(
+                focusNode: deskripsiFocusNode,
+                controller: controller.deskripsiController,
                 onChanged: (value) {
-                  controller.deskripsi.value =
-                      value; // Ini adalah variabel observable, jadi perlu diperbarui di sini
+                  controller.deskripsi.value = value;
                 },
                 decoration: InputDecoration(
-                  labelText: 'Masukkan Deskripsi', // Placeholder
-                  prefixIcon: Icon(Icons.edit), // Ikon di dalam field
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 10), // Padding agar rapi
+                  labelText: 'Masukkan Deskripsi',
+                  prefixIcon: Icon(Icons.edit),
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
 
-        // TextField untuk Kategori
-        Text(
-          'Kategori',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () {
-            _showKategoriBottomSheet(context); // Gunakan context di sini
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: controller.selectedKategori.value.isNotEmpty
-                            ? controller.selectedKategori.value
-                            : 'Pilih Kategori', // Placeholder
-                        border: InputBorder.none, // Hilangkan outline border
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 10), // Padding agar rapi
-                      ),
+            // Field untuk Kategori Pendapatan (tanpa keyboard)
+            Text(
+              'Kategori',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                _showKategoriBottomSheet(context);
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: kategoriFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedKategori.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText:
+                                controller.selectedKategori.value.isNotEmpty
+                                    ? controller.selectedKategori.value
+                                    : 'Pilih Kategori',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                    Divider(
-                      thickness: 1, // Tebal garis bawah
-                      color: Colors.grey, // Warna garis bawah
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ),
+                  );
+                }),
+              ),
+            ),
 
-        // TextField untuk Akun
-        Text(
-          'Dibayar dengan',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () {
-            _showAkunBottomSheet(context); // Gunakan context di sini
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: controller.selectedAkun.value.isNotEmpty
-                            ? controller.selectedAkun.value
-                            : 'Pilih Akun', // Placeholder
-                      ),
+            // Field untuk Masuk Saldo Ke (tanpa keyboard)
+            Text(
+              'Gunakan Akun',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                _showAkunBottomSheet(context);
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: akunFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedAkun.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: controller.selectedAkun.value.isNotEmpty
+                                ? controller.selectedAkun.value
+                                : 'Pilih Akun',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ),
+                  );
+                }),
+              ),
+            ),
 
-        // TextField untuk Tanggal
-        Text(
-          'Tanggal',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () async {
-            // Tampilkan DatePicker saat pengguna mengetuk field tanggal
-            DateTime? selectedDates = await showDatePicker(
-              context: context, // Gunakan context di sini
-              initialDate: DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2101),
-            );
-
-            // Jika pengguna memilih tanggal, simpan ke controller
-            if (selectedDates != null) {
-              controller.selectedDates.value =
-                  "${selectedDates.day}-${selectedDates.month}-${selectedDates.year}";
-            }
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: controller.selectedDates.value.isNotEmpty
-                            ? controller.selectedDates.value
-                            : 'Pilih Tanggal', // Placeholder
-                        prefixIcon:
-                            Icon(Icons.calendar_today), // Ikon di dalam field
-                        border: InputBorder.none, // Hilangkan outline border
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 10), // Padding agar rapi
-                      ),
+            // Field untuk Tanggal Pendapatan (tanpa keyboard)
+            Text(
+              'Tanggal',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () async {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                DateTime? selectedDates = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2101),
+                );
+                if (selectedDates != null) {
+                  controller.selectedDates.value =
+                      "${selectedDates.day}-${selectedDates.month}-${selectedDates.year}";
+                }
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: tanggalFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedDates.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: controller.selectedDates.value.isNotEmpty
+                                ? controller.selectedDates.value
+                                : 'Pilih Tanggal',
+                            prefixIcon: Icon(Icons.calendar_today),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                    Divider(
-                      thickness: 1, // Tebal garis bawah
-                      color: Colors.grey, // Warna garis bawah
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
+                  );
+                }),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildPendapatanForm(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // TextField untuk Deskripsi Pendapatan
-        Text(
-          'Deskripsi',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: TextField(
-              controller: controller
-                  .deskripsiController, // Gunakan controller yang sudah didefinisikan
-              onChanged: (value) {
-                controller.deskripsi.value =
-                    value; // Simpan input deskripsi ke dalam controller
-              },
-              decoration: InputDecoration(
-                labelText: 'Masukkan Deskripsi', // Placeholder
-                prefixIcon: Icon(Icons.edit), // Ikon di dalam field
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 10), // Padding agar rapi
+    // Initialize the date with the current date if it's not already set
+    if (controller.selectedDates.value.isEmpty) {
+      final today = DateTime.now();
+      controller.selectedDates.value =
+          "${today.day}-${today.month}-${today.year}";
+    }
+
+    return GestureDetector(
+      onTap: () {
+        // Menutup keyboard saat mengetuk di luar TextField
+        FocusScope.of(context).requestFocus(FocusNode());
+      },
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // TextField untuk Deskripsi Pendapatan
+            Text(
+              'Deskripsi',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: TextField(
+                focusNode: deskripsiFocusNode,
+                controller: controller.deskripsiController,
+                onChanged: (value) {
+                  controller.deskripsi.value = value;
+                },
+                decoration: InputDecoration(
+                  labelText: 'Masukkan Deskripsi',
+                  prefixIcon: Icon(Icons.edit),
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                ),
               ),
-            )),
+            ),
 
-        // TextField untuk Kategori Pendapatan
-        Text(
-          'Kategori',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () {
-            _showKategoriPendapatanBottomSheet(context);
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: TextEditingController(
-                        text: controller.selectedKategori.value,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: controller.selectedKategori.value.isNotEmpty
-                            ? controller.selectedKategori.value
-                            : 'Pilih Kategori',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
+            // Field untuk Kategori Pendapatan (tanpa keyboard)
+            Text(
+              'Kategori',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                _showKategoriPendapatanBottomSheet(context);
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: kategoriFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedKategori.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText:
+                                controller.selectedKategori.value.isNotEmpty
+                                    ? controller.selectedKategori.value
+                                    : 'Pilih Kategori',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                    Divider(
-                      thickness: 1,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ),
+                  );
+                }),
+              ),
+            ),
 
-        // TextField untuk Masuk Saldo Ke
-        Text(
-          'Masuk Saldo Ke',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () {
-            _showAkunBottomSheet(context);
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: TextEditingController(
-                        text: controller.selectedAkun.value,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: controller.selectedAkun.value.isNotEmpty
-                            ? controller.selectedAkun.value
-                            : 'Pilih Akun',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
+            // Field untuk Masuk Saldo Ke (tanpa keyboard)
+            Text(
+              'Masuk Saldo Ke',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                _showAkunBottomSheet(context);
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: akunFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedAkun.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: controller.selectedAkun.value.isNotEmpty
+                                ? controller.selectedAkun.value
+                                : 'Pilih Akun',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                    Divider(
-                      thickness: 1,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ),
+                  );
+                }),
+              ),
+            ),
 
-        // TextField untuk Tanggal Pendapatan
-        Text(
-          'Tanggal',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () async {
-            DateTime? selectedDates = await showDatePicker(
-              context: context,
-              initialDate: DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2101),
-            );
-            if (selectedDates != null) {
-              controller.selectedDates.value =
-                  "${selectedDates.day}-${selectedDates.month}-${selectedDates.year}";
-            }
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: TextEditingController(
-                        text: controller.selectedDates.value,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: controller.selectedDates.value.isNotEmpty
-                            ? controller.selectedDates.value
-                            : 'Pilih Tanggal',
-                        prefixIcon: Icon(Icons.calendar_today),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
+            // Field untuk Tanggal Pendapatan (tanpa keyboard)
+            Text(
+              'Tanggal',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () async {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                DateTime? selectedDates = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2101),
+                );
+                if (selectedDates != null) {
+                  controller.selectedDates.value =
+                      "${selectedDates.day}-${selectedDates.month}-${selectedDates.year}";
+                }
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: tanggalFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedDates.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: controller.selectedDates.value.isNotEmpty
+                                ? controller.selectedDates.value
+                                : 'Pilih Tanggal',
+                            prefixIcon: Icon(Icons.calendar_today),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                    Divider(
-                      thickness: 1,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
+                  );
+                }),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -988,7 +1258,7 @@ class StatisticView extends GetView<StatisticController> {
 
   void _showAkunBottomSheet(BuildContext context) {
     final List<Map<String, dynamic>> akunList = [
-      {'nama_akun': 'BNI', 'icon': 'assets/icons/bni.jpg'},
+      {'nama_akun': 'BNI', 'icon': 'assets/icons/bni.jpg', 'isLocal': true},
       // Akun lainnya...
     ];
 
@@ -1012,12 +1282,44 @@ class StatisticView extends GetView<StatisticController> {
                     controller.accounts.length + controller.creditCards.length,
                 itemBuilder: (context, index) {
                   Map<String, dynamic> item;
+                  bool isLocalAsset;
+
                   if (index < controller.accounts.length) {
                     item = controller.accounts[index];
+                    isLocalAsset = item['isLocal'] ??
+                        false; // Pastikan ada properti 'isLocal' pada setiap item
+
                     return ListTile(
-                      leading: Icon(Icons.account_balance_wallet),
+                      leading: isLocalAsset
+                          ? Image.asset(
+                              item[
+                                  'icon'], // Gunakan Image.asset untuk ikon lokal
+                              width: 40,
+                              height: 40,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Jika ada error, tampilkan ikon default
+                                return Image.asset(
+                                  'assets/icons/default_icon.png',
+                                  width: 40,
+                                  height: 40,
+                                );
+                              },
+                            )
+                          : Image.network(
+                              item[
+                                  'icon'], // Gunakan Image.network jika bukan lokal
+                              width: 40,
+                              height: 40,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Jika URL tidak valid, tampilkan ikon default
+                                return Image.asset(
+                                  'assets/icons/default_icon.png',
+                                  width: 40,
+                                  height: 40,
+                                );
+                              },
+                            ),
                       title: Text(item['nama_akun']),
-                      subtitle: Text('Saldo: ${item['saldo_awal']}'),
                       onTap: () {
                         controller.selectedAkun.value = item['nama_akun'];
                         Navigator.pop(context);
@@ -1050,10 +1352,10 @@ class StatisticView extends GetView<StatisticController> {
 
   void _showKategoriBottomSheet(BuildContext context) {
     final List<Map<String, dynamic>> kategoriList = [
-      {'labels': 'Makan', 'icon': 'assets/icons/food.png'},
-      {'labels': 'Transportasi', 'icon': 'assets/icons/car.png'},
-      {'labels': 'Belanja', 'icon': 'assets/icons/shop.png'},
-      {'labels': 'Hiburan', 'icon': 'assets/icons/cinema.png'},
+      {'labels': 'Makan', 'icon': 'assets/icons/makanan.png'},
+      {'labels': 'Transport', 'icon': 'assets/icons/cars.png'},
+      {'labels': 'Belanja', 'icon': 'assets/icons/shop2.png'},
+      {'labels': 'Hiburan', 'icon': 'assets/icons/hiburan.png'},
       {'labels': 'Pendidikan', 'icon': 'assets/icons/pendidikan.png'},
       {'labels': 'Rumah Tangga', 'icon': 'assets/icons/rt.png'},
       {'labels': 'Investasi', 'icon': 'assets/icons/investasi.png'},

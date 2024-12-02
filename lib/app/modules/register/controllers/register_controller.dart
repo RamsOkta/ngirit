@@ -37,13 +37,10 @@ class RegisterController extends GetxController {
           'email': email.value,
         });
 
-        // Simpan data akun default ke koleksi 'accounts'
-        await FirebaseFirestore.instance
-            .collection('accounts')
-            .doc() // Menggunakan doc() tanpa parameter untuk ID otomatis
-            .set({
+        // Simpan data akun default ke koleksi 'accounts' dengan user_id
+        await FirebaseFirestore.instance.collection('accounts').add({
           'nama_akun': 'DefaultAcc',
-          'saldo_awal': '1000000',
+          'saldo_awal': '0 ',
           'icon': 'assets/icons/default_icon.png', // Simpan sebagai string
           'user_id': userCredential.user!.uid,
         });

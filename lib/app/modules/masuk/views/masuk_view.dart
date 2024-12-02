@@ -88,7 +88,7 @@ class MasukView extends StatelessWidget {
                     Get.toNamed('/login');
                   },
                   child: Text(
-                    'Login',
+                    'Masuk',
                     style: TextStyle(
                       fontSize: 20,
                       fontFamily: 'Inter', // Menggunakan font Inter
@@ -115,7 +115,7 @@ class MasukView extends StatelessWidget {
                     Get.toNamed('/register');
                   },
                   child: Text(
-                    'Register',
+                    'Daftar',
                     style: TextStyle(
                       fontSize: 20,
                       fontFamily: 'Inter', // Menggunakan font Inter

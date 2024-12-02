@@ -1,5 +1,8 @@
+import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class TambahakunController extends GetxController {
@@ -93,8 +96,6 @@ class TambahakunController extends GetxController {
             'saldo_awal': saldoAkun.value,
             'icon': selectedIcon.value, // Menyimpan path asset dari ikon
           });
-
-          Get.snackbar("Sukses", "Akun berhasil ditambahkan");
         }
       } catch (e) {
         Get.snackbar("Error", "Terjadi kesalahan: $e");
@@ -102,5 +103,61 @@ class TambahakunController extends GetxController {
     } else {
       Get.snackbar("Error", "Lengkapi semua data!");
     }
+  }
+
+  Future<void> showSuccessAnimation(BuildContext context) async {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: '',
+      pageBuilder: (BuildContext context, Animation<double> animation,
+          Animation<double> secondaryAnimation) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(
+              sigmaX: 8, sigmaY: 8), // Efek blur pada background
+          child: Center(
+            child: ScaleTransition(
+              scale: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutBack,
+              ),
+              child: Container(
+                width: 250, // Ukuran lebih besar agar muat teks dan ikon
+                height: 250,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 100,
+                    ),
+                    SizedBox(height: 10), // Spasi antara ikon dan teks
+                    Text(
+                      "Data Berhasil Diisi",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      transitionDuration: Duration(milliseconds: 400),
+    );
+
+    // Tunggu beberapa detik, kemudian tutup dialog
+    await Future.delayed(Duration(seconds: 3));
+    Navigator.of(context, rootNavigator: true).pop();
   }
 }

@@ -54,16 +54,34 @@ class TambahakunView extends StatelessWidget {
                           // Padding untuk status bar
                           SizedBox(height: 50),
 
-                          // Teks judul di tengah
-                          Center(
-                            child: Text(
-                              'Tambah Akun',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
+                          // Row untuk tombol back dan judul
+                          Row(
+                            children: [
+                              // Tombol back
+                              IconButton(
+                                icon:
+                                    Icon(Icons.arrow_back, color: Colors.white),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
                               ),
-                            ),
+                              // Teks judul di tengah
+                              Expanded(
+                                child: Center(
+                                  child: Text(
+                                    'Tambah Akun',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                  width:
+                                      48), // Placeholder untuk mengimbangi posisi teks
+                            ],
                           ),
                         ],
                       ),
@@ -201,29 +219,49 @@ class TambahakunView extends StatelessWidget {
                           SizedBox(height: 20),
 
                           // Input Saldo Awal Akun
-                          TextField(
-                            keyboardType: TextInputType.number,
-                            onChanged: (value) {
-                              controller.saldoAkun.value =
-                                  value; // Simpan sebagai string
-                            },
-                            controller: TextEditingController(
-                                text: controller.saldoAkun.value),
-                            decoration: InputDecoration(
-                              labelText: 'Saldo Akun',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Label di luar TextField
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(left: 4, bottom: 4),
+                                child: Text(
+                                  'Saldo Akun',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black,
+                                  ),
+                                ),
                               ),
-                              filled: true,
-                              fillColor: Colors.grey[200],
-                            ),
+                              // TextField untuk input
+                              TextField(
+                                keyboardType: TextInputType.number,
+                                onChanged: (value) {
+                                  controller.saldoAkun.value =
+                                      value; // Simpan sebagai string
+                                },
+                                controller: TextEditingController(
+                                    text: controller.saldoAkun.value),
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey[200],
+                                ),
+                              ),
+                            ],
                           ),
                           SizedBox(height: 40),
 
                           // Button Buat Akun
                           ElevatedButton(
-                            onPressed: () {
+                            onPressed: () async {
                               controller.tambahAkun();
+
+                              // Menampilkan animasi notifikasi sukses
+                              await controller.showSuccessAnimation(context);
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor:

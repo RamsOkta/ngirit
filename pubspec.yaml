@@ -15,7 +15,7 @@ dependencies:
   fl_chart: 
   intl : 
   font_awesome_flutter:
-  flutter_launcher_icons: "^0.14.1"
+
   
   images_picker:
   marquee:
@@ -30,10 +30,6 @@ dev_dependencies:
   flutter_test: 
     sdk: flutter
 
-flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "assets/images/login.png"
 
 flutter: 
   uses-material-design: true

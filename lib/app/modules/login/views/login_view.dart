@@ -161,7 +161,7 @@ class LoginView extends StatelessWidget {
                     children: [
                       TextSpan(text: "Tidak Memiliki Akun? "),
                       TextSpan(
-                        text: "Registrasi",
+                        text: "Daftar",
                         style: TextStyle(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,

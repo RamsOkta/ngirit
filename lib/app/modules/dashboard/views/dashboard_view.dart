@@ -4,9 +4,46 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controllers/dashboard_controller.dart';
 
+import 'package:flutter/services.dart';
+
+class NumberInputFormatter extends TextInputFormatter {
+  final NumberFormat _formatter = NumberFormat.decimalPattern('en');
+
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    // Jika input kosong, tidak perlu diformat
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    // Hapus semua pemisah lama agar hanya tersisa angka
+    final intSelectionIndex = newValue.selection.baseOffset;
+    final String pureNumber = newValue.text.replaceAll(',', '');
+
+    // Format angka dengan pemisah ribuan
+    final newText = _formatter.format(int.parse(pureNumber));
+
+    // Kembalikan nilai baru dengan posisi kursor yang benar
+    return TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(
+        offset: intSelectionIndex + (newText.length - pureNumber.length),
+      ),
+    );
+  }
+}
+
 class DashboardView extends StatelessWidget {
   final DashboardController controller = Get.put(DashboardController());
   final TextEditingController nominalController = TextEditingController();
+  final FocusNode deskripsiFocusNode = FocusNode();
+
+  final FocusNode kategoriFocusNode = FocusNode();
+
+  final FocusNode akunFocusNode = FocusNode();
+
+  final FocusNode tanggalFocusNode = FocusNode();
 
   @override
   Widget build(BuildContext context) {
@@ -90,12 +127,13 @@ class DashboardView extends StatelessWidget {
                       // Kolom Saldo dengan Gradien
                       Container(
                         margin: EdgeInsets.all(16),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 16, horizontal: 10),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
                               Color(0xFF35478C),
-                              Color(
-                                  0xFFFFFFFF), // Menggunakan warna putih di akhir
+                              Color(0xFFB0C4DE), // Warna gradasi lebih terang
                             ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
@@ -108,65 +146,69 @@ class DashboardView extends StatelessWidget {
                               title: Text(
                                 'Saldo Anda',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: Colors.white,
                                   fontFamily: 'OpenSans',
                                 ),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Obx(() {
+                                  return Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      controller.isSaldoVisible.value
+                                          ? '${NumberFormat.currency(locale: 'id', symbol: 'Rp', decimalDigits: 0).format(controller.saldo.value)}'
+                                          : '******',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: "OpenSans",
+                                      ),
+                                    ),
+                                  );
+                                }),
                               ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Obx(() {
                                     return IconButton(
-                                      icon: Icon(controller.isSaldoVisible.value
-                                          ? Icons.visibility
-                                          : Icons.visibility_off),
+                                      icon: Icon(
+                                        controller.isSaldoVisible.value
+                                            ? Icons.visibility
+                                            : Icons.visibility_off,
+                                        color: Colors.white,
+                                      ),
                                       onPressed:
                                           controller.toggleSaldoVisibility,
                                     );
                                   }),
                                   IconButton(
-                                    icon: Icon(Icons.refresh),
-                                    onPressed: controller
-                                        .listenToAccountUpdates, // Tombol refresh
+                                    icon: Icon(Icons.refresh,
+                                        color: Colors.white),
+                                    onPressed:
+                                        controller.listenToAccountUpdates,
                                   ),
                                 ],
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Obx(() {
-                                return Text(
-                                  controller.isSaldoVisible.value
-                                      ? '${NumberFormat.currency(locale: 'id', symbol: 'Rp', decimalDigits: 0).format(controller.saldo.value)}'
-                                      : '******',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: "OpenSans",
-                                  ),
-                                );
-                              }),
-                            ),
-                            Divider(),
+                            Divider(color: Colors.white54),
                             Obx(() {
                               return Column(
                                 children: controller.accounts.map((account) {
                                   String accountName =
                                       account['nama_akun']?.toString() ??
-                                          'Unknown'; // Nama akun
+                                          'Unknown';
                                   String amountString =
-                                      account['saldo_akhir']?.toString() ??
-                                          '0'; // Saldo akun
+                                      account['saldo_akhir']?.toString() ?? '0';
                                   Color amountColor;
 
-                                  // Memastikan saldo ditampilkan dengan benar dan warna sesuai
                                   try {
                                     int amount = int.parse(amountString);
                                     amountColor =
                                         amount >= 0 ? Colors.blue : Colors.red;
 
-                                    // Memformat saldo dengan NumberFormat
                                     amountString = NumberFormat.currency(
                                       locale: 'id',
                                       symbol: 'Rp',
@@ -178,15 +220,105 @@ class DashboardView extends StatelessWidget {
                                   }
 
                                   String iconUrl =
-                                      account['icon']?.toString() ??
-                                          ''; // URL ikon
+                                      account['icon']?.toString() ?? '';
+                                  bool isLocalAsset =
+                                      iconUrl.startsWith("assets/");
 
-                                  // Membuat tile untuk setiap akun
-                                  return _buildAccountTile(
-                                    accountName,
-                                    amountString,
-                                    amountColor,
-                                    iconUrl,
+                                  return Container(
+                                    margin: EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 16),
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white, // Background putih
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.3),
+                                          spreadRadius: 2,
+                                          blurRadius: 5,
+                                          offset:
+                                              Offset(0, 3), // shadow position
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        // Kiri: Ikon dan Nama Akun
+                                        Row(
+                                          children: [
+                                            Container(
+                                              width: 40,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        8), // Radius untuk border
+                                              ),
+                                              child: isLocalAsset
+                                                  ? Image.asset(
+                                                      iconUrl, // Gunakan Image.asset untuk ikon lokal
+                                                      width: 40,
+                                                      height: 40,
+                                                      errorBuilder: (context,
+                                                          error, stackTrace) {
+                                                        // Jika ada error, tampilkan ikon default
+                                                        return Image.asset(
+                                                          'assets/icons/default_icon.png',
+                                                          width: 40,
+                                                          height: 40,
+                                                        );
+                                                      },
+                                                    )
+                                                  : Image.network(
+                                                      iconUrl, // Gunakan Image.network jika bukan lokal
+                                                      width: 40,
+                                                      height: 40,
+                                                      errorBuilder: (context,
+                                                          error, stackTrace) {
+                                                        // Jika URL tidak valid, tampilkan ikon default
+                                                        return Image.asset(
+                                                          'assets/icons/default_icon.png',
+                                                          width: 40,
+                                                          height: 40,
+                                                        );
+                                                      },
+                                                    ),
+                                            ),
+                                            SizedBox(width: 10),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  accountName,
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontFamily: 'OpenSans',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        // Kanan: Amount
+                                        Obx(() {
+                                          return Text(
+                                            controller.isSaldoVisible.value
+                                                ? amountString
+                                                : '******',
+                                            style: TextStyle(
+                                              color: amountColor,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              fontFamily: 'OpenSans',
+                                            ),
+                                          );
+                                        }),
+                                      ],
+                                    ),
                                   );
                                 }).toList(),
                               );
@@ -209,229 +341,6 @@ class DashboardView extends StatelessWidget {
                           ],
                         ),
                       ),
-
-                      // Tambahkan kolom untuk Kartu Kredit dengan Gradien
-                      // Container(
-                      //   margin: EdgeInsets.all(16),
-                      //   decoration: BoxDecoration(
-                      //     gradient: LinearGradient(
-                      //       colors: [
-                      //         Color(0xFF35478C),
-                      //         Color(0xFFFFFFFF), // Gradient dari biru ke putih
-                      //       ],
-                      //       begin: Alignment.topCenter,
-                      //       end: Alignment.bottomCenter,
-                      //     ),
-                      //     borderRadius: BorderRadius.circular(20),
-                      //   ),
-                      //   child: Padding(
-                      //     padding: const EdgeInsets.all(16.0),
-                      //     child: Column(
-                      //       crossAxisAlignment: CrossAxisAlignment.start,
-                      //       children: [
-                      //         // Bagian "Kartu Saya"
-                      //         SizedBox(height: 8),
-                      //         Text(
-                      //           'Kartu Saya',
-                      //           style: TextStyle(
-                      //             color: Colors.white,
-                      //             fontWeight: FontWeight.bold,
-                      //           ),
-                      //         ),
-                      //         SizedBox(height: 16),
-
-                      //         // Daftar kartu kredit yang diambil dari controller secara dinamis
-                      //         Obx(() {
-                      //           if (controller.creditCards.isEmpty) {
-                      //             return Text(
-                      //               'Belum ada kartu kredit terdaftar',
-                      //               style: TextStyle(color: Colors.white),
-                      //             );
-                      //           }
-
-                      //           return Column(
-                      //             children: controller.creditCards.map((card) {
-                      //               String cardName =
-                      //                   card['namaKartu'] ?? 'Unknown';
-                      //               String cardIcon = card['ikonKartu'] ??
-                      //                   'assets/default_icon.png';
-                      //               double limitKredit = double.tryParse(
-                      //                       card['limitKredit'] ?? '0') ??
-                      //                   0;
-                      //               double fakturSaatIni =
-                      //                   controller.getPengeluaran(cardName);
-
-                      //               // Hitung progress (faktur saat ini / limit kredit)
-                      //               double progress = limitKredit > 0
-                      //                   ? fakturSaatIni / limitKredit
-                      //                   : 0;
-
-                      //               return Column(
-                      //                 children: [
-                      //                   Row(
-                      //                     children: [
-                      //                       // Icon kartu
-                      //                       CircleAvatar(
-                      //                         backgroundColor: Colors.white,
-                      //                         radius: 30,
-                      //                         child:
-                      //                             cardIcon.startsWith("assets/")
-                      //                                 ? Image.asset(
-                      //                                     cardIcon,
-                      //                                     width: 30,
-                      //                                     height: 30,
-                      //                                   )
-                      //                                 : Image.network(
-                      //                                     cardIcon,
-                      //                                     width: 30,
-                      //                                     height: 30,
-                      //                                   ),
-                      //                       ),
-                      //                       SizedBox(width: 16),
-                      //                       Column(
-                      //                         crossAxisAlignment:
-                      //                             CrossAxisAlignment.start,
-                      //                         children: [
-                      //                           Text(
-                      //                             cardName,
-                      //                             style: TextStyle(
-                      //                               color: Colors.white,
-                      //                               fontWeight: FontWeight.bold,
-                      //                               fontSize: 16,
-                      //                             ),
-                      //                           ),
-                      //                           // Progress bar
-                      //                           SizedBox(height: 8),
-                      //                           Container(
-                      //                             width: 200,
-                      //                             child:
-                      //                                 LinearProgressIndicator(
-                      //                               value: progress.isFinite
-                      //                                   ? progress
-                      //                                   : 0,
-                      //                               backgroundColor: Colors
-                      //                                   .white
-                      //                                   .withOpacity(0.3),
-                      //                               // Warna berubah dari hijau ke merah secara bertahap
-                      //                               color: Color.lerp(
-                      //                                   Colors.green,
-                      //                                   Colors.red,
-                      //                                   progress),
-                      //                               minHeight: 8,
-                      //                             ),
-                      //                           ),
-
-                      //                           SizedBox(height: 8),
-                      //                         ],
-                      //                       ),
-                      //                     ],
-                      //                   ),
-                      //                   SizedBox(height: 16),
-                      //                   // Informasi limit kredit
-                      //                   Container(
-                      //                     decoration: BoxDecoration(
-                      //                       color: const Color.fromARGB(
-                      //                           255, 247, 245, 245),
-                      //                       borderRadius:
-                      //                           BorderRadius.circular(12),
-                      //                     ),
-                      //                     padding: EdgeInsets.all(16),
-                      //                     child: Row(
-                      //                       mainAxisAlignment:
-                      //                           MainAxisAlignment.spaceBetween,
-                      //                       children: [
-                      //                         Column(
-                      //                           crossAxisAlignment:
-                      //                               CrossAxisAlignment.start,
-                      //                           children: [
-                      //                             Text(
-                      //                               'Tersedia',
-                      //                               style: TextStyle(
-                      //                                   color: Colors.grey),
-                      //                             ),
-                      //                             SizedBox(height: 8),
-                      //                             Text(
-                      //                               // Memformat nilai limitKredit - fakturSaatIni dengan NumberFormat
-                      //                               '${NumberFormat.currency(
-                      //                                 locale: 'id',
-                      //                                 symbol: 'Rp',
-                      //                                 decimalDigits: 0,
-                      //                               ).format(limitKredit - fakturSaatIni)}',
-                      //                               style: TextStyle(
-                      //                                 color: (limitKredit -
-                      //                                             fakturSaatIni) <
-                      //                                         0
-                      //                                     ? Colors.red
-                      //                                     : Colors
-                      //                                         .green, // Mengubah warna jika hasil negatif
-                      //                                 fontWeight:
-                      //                                     FontWeight.bold,
-                      //                                 fontSize: 16,
-                      //                               ),
-                      //                             ),
-                      //                           ],
-                      //                         ),
-                      //                         Column(
-                      //                           crossAxisAlignment:
-                      //                               CrossAxisAlignment.end,
-                      //                           children: [
-                      //                             Text(
-                      //                               'Faktur Saat Ini',
-                      //                               style: TextStyle(
-                      //                                   color: Colors.grey),
-                      //                             ),
-                      //                             SizedBox(height: 8),
-                      //                             Text(
-                      //                               // Memformat nilai faktur dengan NumberFormat
-                      //                               '-${NumberFormat.currency(
-                      //                                 locale: 'id',
-                      //                                 symbol: 'Rp',
-                      //                                 decimalDigits: 0,
-                      //                               ).format(fakturSaatIni)}',
-                      //                               style: TextStyle(
-                      //                                 color: Colors.red,
-                      //                                 fontWeight:
-                      //                                     FontWeight.bold,
-                      //                                 fontSize: 16,
-                      //                               ),
-                      //                             ),
-                      //                           ],
-                      //                         ),
-                      //                       ],
-                      //                     ),
-                      //                   ),
-                      //                   SizedBox(height: 16),
-                      //                 ],
-                      //               );
-                      //             }).toList(),
-                      //           );
-                      //         }),
-
-                      //         // Tombol "Kelola Kartu"
-                      //         Center(
-                      //           child: ElevatedButton(
-                      //             onPressed: () {
-                      //               Get.toNamed('/creditcard');
-                      //             },
-                      //             style: ElevatedButton.styleFrom(
-                      //               backgroundColor: Colors.transparent,
-                      //               side: BorderSide(color: Colors.black),
-                      //               shape: RoundedRectangleBorder(
-                      //                 borderRadius: BorderRadius.circular(8),
-                      //               ),
-                      //               padding: EdgeInsets.symmetric(
-                      //                   horizontal: 48, vertical: 16),
-                      //             ),
-                      //             child: Text(
-                      //               'Kelola Kartu',
-                      //               style: TextStyle(color: Colors.black),
-                      //             ),
-                      //           ),
-                      //         ),
-                      //       ],
-                      //     ),
-                      //   ),
-                      // )
                     ],
                   ),
                 ),
@@ -522,10 +431,6 @@ class DashboardView extends StatelessWidget {
                       backgroundColor =
                           Colors.green; // Warna hijau untuk Pendapatan
                       break;
-                    // case 2:
-                    //   backgroundColor =
-                    //       Colors.blue; // Warna biru untuk Transfer
-                    //   break;
                     default:
                       backgroundColor = Colors.red;
                   }
@@ -542,7 +447,6 @@ class DashboardView extends StatelessWidget {
                           children: [
                             _buildTabItem('Pengeluaran', Colors.red, 0),
                             _buildTabItem('Pendapatan', Colors.green, 1),
-                            // _buildTabItem('Transfer', Colors.blue, 2),
                           ],
                         ),
                         // Input angka "0,00" di dalam background color
@@ -553,8 +457,10 @@ class DashboardView extends StatelessWidget {
                               Spacer(), // Menggeser input ke kanan
                               Expanded(
                                 child: TextField(
-                                  controller:
-                                      nominalController, // Menggunakan controller
+                                  controller: controller.selectedTab.value == 0
+                                      ? controller.pengeluaranController
+                                      : controller
+                                          .pendapatanController, // Controller per tab
                                   keyboardType: TextInputType.number,
                                   textAlign:
                                       TextAlign.right, // Teks sejajar kanan
@@ -571,8 +477,12 @@ class DashboardView extends StatelessWidget {
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
                                   ),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter
+                                        .digitsOnly, // Hanya menerima angka
+                                    NumberInputFormatter(), // Formatter angka dengan pemisah ribuan
+                                  ],
                                 ),
-// Hilangkan koma yang tidak perlu di sini
                               ),
                             ],
                           ),
@@ -605,25 +515,30 @@ class DashboardView extends StatelessWidget {
                               return _buildPengeluaranForm(context);
                             case 1:
                               return _buildPendapatanForm(context);
-                            // case 2:
-                            //   return _buildTransferForm();
                             default:
                               return _buildPengeluaranForm(context);
                           }
                         }),
                         SizedBox(height: 20),
                         // Tombol Save di bagian bawah BottomSheet
-                        // Tombol Save di bagian bawah BottomSheet
                         Align(
                           alignment: Alignment.bottomCenter,
                           child: ElevatedButton(
                             onPressed: () {
-                              // Ambil nilai nominal dari nominalController sebagai String
-                              String nominal = nominalController.text;
+                              // Ambil nilai nominal dari controller yang sesuai
+                              String nominal = controller.selectedTab.value == 0
+                                  ? controller.pengeluaranController.text
+                                  : controller.pendapatanController.text;
 
                               // Panggil fungsi untuk menyimpan data ke Firebase
-                              controller.saveFormData(
-                                  nominal); // Panggil saveFormData() dari controller
+                              controller.saveFormData(nominal);
+
+                              // Kosongkan form setelah data disimpan
+                              controller
+                                  .clearForm(controller.selectedTab.value);
+
+                              // Tutup BottomSheet setelah menyimpan
+                              Navigator.pop(context);
                             },
                             style: ElevatedButton.styleFrom(
                               padding: EdgeInsets.symmetric(
@@ -634,7 +549,7 @@ class DashboardView extends StatelessWidget {
                               backgroundColor: Colors.blue, // Warna tombol
                             ),
                             child: Text(
-                              'Save',
+                              'Simpan',
                               style:
                                   TextStyle(fontSize: 18, color: Colors.white),
                             ),
@@ -652,7 +567,6 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-// Fungsi untuk membuat text field di dalam bottom sheet
   // Fungsi untuk membuat TabItem di dalam bottom sheet
   Widget _buildTabItem(String title, Color color, int index) {
     return Expanded(
@@ -660,7 +574,21 @@ class DashboardView extends StatelessWidget {
         bool isSelected = controller.selectedTab.value == index;
         return GestureDetector(
           onTap: () {
+            // Jika tab saat ini berbeda dari tab yang diklik, reset semua data form
+            if (controller.selectedTab.value != index) {
+              controller.resetFormData();
+            }
+
+            // Set selected tab dan kosongkan controller sesuai tab yang dipilih
             controller.selectedTab.value = index;
+
+            if (index == 0) {
+              controller.pengeluaranController
+                  .clear(); // Bersihkan semua field di tab Pengeluaran
+            } else if (index == 1) {
+              controller.pendapatanController
+                  .clear(); // Bersihkan semua field di tab Pendapatan
+            }
           },
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -676,7 +604,7 @@ class DashboardView extends StatelessWidget {
                   child: Text(
                     title,
                     style: TextStyle(
-                      color: Colors.white, // Selalu putih untuk teks
+                      color: Colors.white, // Teks selalu putih
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -701,307 +629,355 @@ class DashboardView extends StatelessWidget {
   }
 
   Widget _buildPengeluaranForm(BuildContext context) {
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start, // Supaya label di atas text field
+    if (controller.selectedDate.value.isEmpty) {
+      final today = DateTime.now();
+      controller.selectedDate.value =
+          "${today.day}-${today.month}-${today.year}";
+    }
 
-      children: [
-        // TextField untuk Deskripsi
-
-        Text(
-          'Deskripsi', // Label di atas input field
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Column(
-            children: [
-              TextField(
-                controller: controller
-                    .deskripsiController, // Gunakan controller biasa tanpa Obx
+    return GestureDetector(
+      onTap: () {
+        // Menutup keyboard saat mengetuk di luar TextField
+        FocusScope.of(context).requestFocus(FocusNode());
+      },
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // TextField untuk Deskripsi Pendapatan
+            Text(
+              'Deskripsi',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: TextField(
+                focusNode: deskripsiFocusNode,
+                controller: controller.deskripsiController,
                 onChanged: (value) {
-                  controller.deskripsi.value =
-                      value; // Ini adalah variabel observable, jadi perlu diperbarui di sini
+                  controller.deskripsi.value = value;
                 },
                 decoration: InputDecoration(
-                  labelText: 'Masukkan Deskripsi', // Placeholder
-                  prefixIcon: Icon(Icons.edit), // Ikon di dalam field
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 10), // Padding agar rapi
+                  labelText: 'Masukkan Deskripsi',
+                  prefixIcon: Icon(Icons.edit),
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
 
-        // TextField untuk Kategori
-        Text(
-          'Kategori',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () {
-            _showKategoriBottomSheet(context); // Gunakan context di sini
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: controller.selectedKategori.value.isNotEmpty
-                            ? controller.selectedKategori.value
-                            : 'Pilih Kategori', // Placeholder
-                        border: InputBorder.none, // Hilangkan outline border
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 10), // Padding agar rapi
-                      ),
+            // Field untuk Kategori Pendapatan (tanpa keyboard)
+            Text(
+              'Kategori',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                _showKategoriBottomSheet(context);
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: kategoriFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedKategori.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText:
+                                controller.selectedKategori.value.isNotEmpty
+                                    ? controller.selectedKategori.value
+                                    : 'Pilih Kategori',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                    Divider(
-                      thickness: 1, // Tebal garis bawah
-                      color: Colors.grey, // Warna garis bawah
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ),
+                  );
+                }),
+              ),
+            ),
 
-        // TextField untuk Akun
-        Text(
-          'Dibayar dengan',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () {
-            _showAkunBottomSheet(context); // Gunakan context di sini
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: controller.selectedAkun.value.isNotEmpty
-                            ? controller.selectedAkun.value
-                            : 'Pilih Akun', // Placeholder
-                      ),
+            // Field untuk Masuk Saldo Ke (tanpa keyboard)
+            Text(
+              'Gunakan Akun',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                _showAkunBottomSheet(context);
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: akunFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedAkun.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: controller.selectedAkun.value.isNotEmpty
+                                ? controller.selectedAkun.value
+                                : 'Pilih Akun',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ),
+                  );
+                }),
+              ),
+            ),
 
-        // TextField untuk Tanggal
-        Text(
-          'Tanggal',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () async {
-            // Tampilkan DatePicker saat pengguna mengetuk field tanggal
-            DateTime? selectedDate = await showDatePicker(
-              context: context, // Gunakan context di sini
-              initialDate: DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2101),
-            );
-
-            // Jika pengguna memilih tanggal, simpan ke controller
-            if (selectedDate != null) {
-              controller.selectedDate.value =
-                  "${selectedDate.day}-${selectedDate.month}-${selectedDate.year}";
-            }
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: controller.selectedDate.value.isNotEmpty
-                            ? controller.selectedDate.value
-                            : 'Pilih Tanggal', // Placeholder
-                        prefixIcon:
-                            Icon(Icons.calendar_today), // Ikon di dalam field
-                        border: InputBorder.none, // Hilangkan outline border
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 10), // Padding agar rapi
-                      ),
+            // Field untuk Tanggal Pendapatan (tanpa keyboard)
+            Text(
+              'Tanggal',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () async {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                DateTime? selectedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2101),
+                );
+                if (selectedDate != null) {
+                  controller.selectedDate.value =
+                      "${selectedDate.day}-${selectedDate.month}-${selectedDate.year}";
+                }
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: tanggalFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedDate.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: controller.selectedDate.value.isNotEmpty
+                                ? controller.selectedDate.value
+                                : 'Pilih Tanggal',
+                            prefixIcon: Icon(Icons.calendar_today),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                    Divider(
-                      thickness: 1, // Tebal garis bawah
-                      color: Colors.grey, // Warna garis bawah
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
+                  );
+                }),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildPendapatanForm(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // TextField untuk Deskripsi Pendapatan
-        Text(
-          'Deskripsi',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: TextField(
-              controller: controller
-                  .deskripsiController, // Gunakan controller yang sudah didefinisikan
-              onChanged: (value) {
-                controller.deskripsi.value =
-                    value; // Simpan input deskripsi ke dalam controller
-              },
-              decoration: InputDecoration(
-                labelText: 'Masukkan Deskripsi', // Placeholder
-                prefixIcon: Icon(Icons.edit), // Ikon di dalam field
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 10), // Padding agar rapi
+    // Initialize the date with the current date if it's not already set
+    if (controller.selectedDate.value.isEmpty) {
+      final today = DateTime.now();
+      controller.selectedDate.value =
+          "${today.day}-${today.month}-${today.year}";
+    }
+
+    return GestureDetector(
+      onTap: () {
+        // Menutup keyboard saat mengetuk di luar TextField
+        FocusScope.of(context).requestFocus(FocusNode());
+      },
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // TextField untuk Deskripsi Pendapatan
+            Text(
+              'Deskripsi',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: TextField(
+                focusNode: deskripsiFocusNode,
+                controller: controller.deskripsiController,
+                onChanged: (value) {
+                  controller.deskripsi.value = value;
+                },
+                decoration: InputDecoration(
+                  labelText: 'Masukkan Deskripsi',
+                  prefixIcon: Icon(Icons.edit),
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                ),
               ),
-            )),
+            ),
 
-        // TextField untuk Kategori Pendapatan
-        Text(
-          'Kategori',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () {
-            _showKategoriPendapatanBottomSheet(context);
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: TextEditingController(
-                        text: controller.selectedKategori.value,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: controller.selectedKategori.value.isNotEmpty
-                            ? controller.selectedKategori.value
-                            : 'Pilih Kategori',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
+            // Field untuk Kategori Pendapatan (tanpa keyboard)
+            Text(
+              'Kategori',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                _showKategoriPendapatanBottomSheet(context);
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: kategoriFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedKategori.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText:
+                                controller.selectedKategori.value.isNotEmpty
+                                    ? controller.selectedKategori.value
+                                    : 'Pilih Kategori',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                    Divider(
-                      thickness: 1,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ),
+                  );
+                }),
+              ),
+            ),
 
-        // TextField untuk Masuk Saldo Ke
-        Text(
-          'Masuk Saldo Ke',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () {
-            _showAkunBottomSheet(context);
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: TextEditingController(
-                        text: controller.selectedAkun.value,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: controller.selectedAkun.value.isNotEmpty
-                            ? controller.selectedAkun.value
-                            : 'Pilih Akun',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
+            // Field untuk Masuk Saldo Ke (tanpa keyboard)
+            Text(
+              'Masuk Saldo Ke',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                _showAkunBottomSheet(context);
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: akunFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedAkun.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: controller.selectedAkun.value.isNotEmpty
+                                ? controller.selectedAkun.value
+                                : 'Pilih Akun',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                    Divider(
-                      thickness: 1,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ),
+                  );
+                }),
+              ),
+            ),
 
-        // TextField untuk Tanggal Pendapatan
-        Text(
-          'Tanggal',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        GestureDetector(
-          onTap: () async {
-            DateTime? selectedDate = await showDatePicker(
-              context: context,
-              initialDate: DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2101),
-            );
-            if (selectedDate != null) {
-              controller.selectedDate.value =
-                  "${selectedDate.day}-${selectedDate.month}-${selectedDate.year}";
-            }
-          },
-          child: AbsorbPointer(
-            child: Obx(() {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: TextEditingController(
-                        text: controller.selectedDate.value,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: controller.selectedDate.value.isNotEmpty
-                            ? controller.selectedDate.value
-                            : 'Pilih Tanggal',
-                        prefixIcon: Icon(Icons.calendar_today),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
+            // Field untuk Tanggal Pendapatan (tanpa keyboard)
+            Text(
+              'Tanggal',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            GestureDetector(
+              onTap: () async {
+                FocusScope.of(context).requestFocus(
+                    FocusNode()); // Menghapus fokus dari TextField
+                DateTime? selectedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2101),
+                );
+                if (selectedDate != null) {
+                  controller.selectedDate.value =
+                      "${selectedDate.day}-${selectedDate.month}-${selectedDate.year}";
+                }
+              },
+              child: AbsorbPointer(
+                child: Obx(() {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          focusNode: tanggalFocusNode,
+                          controller: TextEditingController(
+                            text: controller.selectedDate.value,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: controller.selectedDate.value.isNotEmpty
+                                ? controller.selectedDate.value
+                                : 'Pilih Tanggal',
+                            prefixIcon: Icon(Icons.calendar_today),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                        Divider(
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
-                    Divider(
-                      thickness: 1,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ),
+                  );
+                }),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -1084,7 +1060,7 @@ class DashboardView extends StatelessWidget {
 
   void _showAkunBottomSheet(BuildContext context) {
     final List<Map<String, dynamic>> akunList = [
-      {'nama_akun': 'BNI', 'icon': 'assets/icons/bni.jpg'},
+      {'nama_akun': 'BNI', 'icon': 'assets/icons/bni.jpg', 'isLocal': true},
       // Akun lainnya...
     ];
 
@@ -1108,12 +1084,44 @@ class DashboardView extends StatelessWidget {
                     controller.accounts.length + controller.creditCards.length,
                 itemBuilder: (context, index) {
                   Map<String, dynamic> item;
+                  bool isLocalAsset;
+
                   if (index < controller.accounts.length) {
                     item = controller.accounts[index];
+                    isLocalAsset = item['isLocal'] ??
+                        false; // Pastikan ada properti 'isLocal' pada setiap item
+
                     return ListTile(
-                      leading: Icon(Icons.account_balance_wallet),
+                      leading: isLocalAsset
+                          ? Image.asset(
+                              item[
+                                  'icon'], // Gunakan Image.asset untuk ikon lokal
+                              width: 40,
+                              height: 40,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Jika ada error, tampilkan ikon default
+                                return Image.asset(
+                                  'assets/icons/default_icon.png',
+                                  width: 40,
+                                  height: 40,
+                                );
+                              },
+                            )
+                          : Image.network(
+                              item[
+                                  'icon'], // Gunakan Image.network jika bukan lokal
+                              width: 40,
+                              height: 40,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Jika URL tidak valid, tampilkan ikon default
+                                return Image.asset(
+                                  'assets/icons/default_icon.png',
+                                  width: 40,
+                                  height: 40,
+                                );
+                              },
+                            ),
                       title: Text(item['nama_akun']),
-                      subtitle: Text('Saldo: ${item['saldo_awal']}'),
                       onTap: () {
                         controller.selectedAkun.value = item['nama_akun'];
                         Navigator.pop(context);
@@ -1146,10 +1154,10 @@ class DashboardView extends StatelessWidget {
 
   void _showKategoriBottomSheet(BuildContext context) {
     final List<Map<String, dynamic>> kategoriList = [
-      {'labels': 'Makan', 'icon': 'assets/icons/food.png'},
-      {'labels': 'Transportasi', 'icon': 'assets/icons/car.png'},
-      {'labels': 'Belanja', 'icon': 'assets/icons/shop.png'},
-      {'labels': 'Hiburan', 'icon': 'assets/icons/cinema.png'},
+      {'labels': 'Makan', 'icon': 'assets/icons/makanan.png'},
+      {'labels': 'Transport', 'icon': 'assets/icons/cars.png'},
+      {'labels': 'Belanja', 'icon': 'assets/icons/shop2.png'},
+      {'labels': 'Hiburan', 'icon': 'assets/icons/hiburan.png'},
       {'labels': 'Pendidikan', 'icon': 'assets/icons/pendidikan.png'},
       {'labels': 'Rumah Tangga', 'icon': 'assets/icons/rt.png'},
       {'labels': 'Investasi', 'icon': 'assets/icons/investasi.png'},
